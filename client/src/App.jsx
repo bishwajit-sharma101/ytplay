@@ -227,7 +227,7 @@ export default function App() {
     newSocket.on("match_found", ({ roomId, room }) => {
       console.log("[Socket] Match found! Room:", roomId);
       setRoom(room);
-      const opp = room.players.find((p) => p.socketId !== newSocket.id);
+      const opp = room.players.find((p) => p.username.toLowerCase() !== name.toLowerCase());
       setOpponent(opp);
       setChatMessages([]);
       setStatus("matched");
@@ -237,6 +237,7 @@ export default function App() {
     newSocket.on("countdown_tick", ({ count }) => {
       setStatus("countdown");
       setCountdown(count);
+      sound.playCountdownBeep(count);
     });
 
     newSocket.on("game_play", () => {
@@ -246,7 +247,7 @@ export default function App() {
       setOpponentWaiting(false);
       setOpponentSubmitted(false);
       setEnergy(0);
-      sound.startWatchHum();
+      // Note: watch hum sound intentionally removed
     });
 
     newSocket.on("opponent_powerup", ({ type }) => {
@@ -267,7 +268,7 @@ export default function App() {
 
     newSocket.on("room_update", (updatedRoom) => {
       setRoom(updatedRoom);
-      const opp = updatedRoom.players.find((p) => p.socketId !== newSocket.id);
+      const opp = updatedRoom.players.find((p) => p.username.toLowerCase() !== name.toLowerCase());
       setOpponent(opp);
     });
 
@@ -293,7 +294,6 @@ export default function App() {
       setGameResults(results);
       setLeaderboard(newLeaderboard);
       setStatus("results");
-      sound.stopWatchHum();
 
       if (results.draw) {
         sound.playVictory();
@@ -370,8 +370,6 @@ export default function App() {
       socket.emit("video_progress", { progress: progressAtEntry });
       socket.emit("video_finished");
     }
-    
-    sound.stopWatchHum();
     
     if (room && room.video && room.video.questions) {
       setQuestions(room.video.questions);
@@ -508,9 +506,36 @@ export default function App() {
   // Header display
   const headerComponent = (
     <header className="app-header">
-      <div className="logo-container" onClick={resetToDashboard} style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: "10px" }}>
-        <img src="/logo.png" alt="ytPlay Logo" style={{ width: "40px", height: "40px", objectFit: "contain" }} />
-        <span className="logo-text" style={{ fontSize: "24px", fontWeight: "800", color: "var(--text-light)" }}>ytPlay</span>
+      <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+        {/* Back Arrow — only show when not on dashboard */}
+        {status !== "idle" && (
+          <button
+            onClick={() => { sound.playClockTick(); resetToDashboard(); }}
+            title="Back to Dashboard"
+            style={{
+              width: "38px", height: "38px",
+              borderRadius: "10px",
+              border: "1.5px solid var(--glass-border)",
+              background: "var(--bg-dark-surface)",
+              color: "var(--neon-orange)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              cursor: "pointer",
+              fontSize: "18px",
+              fontWeight: "700",
+              transition: "all 0.2s",
+              boxShadow: "0 2px 8px rgba(255,106,0,0.1)",
+              flexShrink: 0,
+            }}
+            onMouseOver={e => { e.currentTarget.style.background = "#fff7ed"; e.currentTarget.style.transform = "translateX(-2px)"; }}
+            onMouseOut={e => { e.currentTarget.style.background = "var(--bg-dark-surface)"; e.currentTarget.style.transform = "none"; }}
+          >
+            ←
+          </button>
+        )}
+        <div className="logo-container" onClick={resetToDashboard} style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: "10px" }}>
+          <img src="/logo.png" alt="ytPlay Logo" style={{ width: "40px", height: "40px", objectFit: "contain" }} />
+          <span className="logo-text" style={{ fontSize: "24px", fontWeight: "800", color: "var(--text-light)" }}>ytPlay</span>
+        </div>
       </div>
 
       <div className="header-search-container" style={{ flex: 1, maxWidth: "600px", margin: "0 40px", display: "flex", alignItems: "center", gap: "15px" }}>

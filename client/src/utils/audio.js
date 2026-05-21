@@ -15,16 +15,23 @@ export function playMatchFound() {
     const ctx = getAudioContext();
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
-    osc.connect(gain);
-    gain.connect(ctx.destination);
+    
+    // Add a low-pass filter to make the sawtooth sound warm and modern
+    const filter = ctx.createBiquadFilter();
+    filter.type = "lowpass";
+    filter.frequency.setValueAtTime(1000, ctx.currentTime);
+    filter.frequency.exponentialRampToValueAtTime(1500, ctx.currentTime + 1.0);
 
     osc.type = "sawtooth";
-    osc.frequency.setValueAtTime(150, ctx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(800, ctx.currentTime + 1.0);
+    osc.frequency.setValueAtTime(220, ctx.currentTime); // Start at A3
+    osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 1.0); // Sweep up to A5
 
-    gain.gain.setValueAtTime(0.01, ctx.currentTime);
-    gain.gain.linearRampToValueAtTime(0.15, ctx.currentTime + 0.2);
-    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1.0);
+    gain.gain.setValueAtTime(0.06, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.0);
+
+    osc.connect(filter);
+    filter.connect(gain);
+    gain.connect(ctx.destination);
 
     osc.start();
     osc.stop(ctx.currentTime + 1.0);
@@ -276,6 +283,51 @@ export function playDefeat() {
       osc.start();
       osc.stop(ctx.currentTime + 1.5);
     });
+  } catch (e) {
+    console.error("Audio error:", e);
+  }
+}
+
+/**
+ * Countdown beep — distinct pitch for each second.
+ * count=3 → high beep, count=2 → mid beep, count=1 → low beep, count=0 → GO fanfare
+ */
+export function playCountdownBeep(count) {
+  try {
+    const ctx = getAudioContext();
+
+    if (count === 0) {
+      // Gentle, soft "GO" notification chime
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(523.25, ctx.currentTime); // C5
+      osc.frequency.exponentialRampToValueAtTime(1046.50, ctx.currentTime + 0.12); // Sweep up to C6
+      gain.gain.setValueAtTime(0.05, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.2);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.25);
+      return;
+    }
+
+    // Soft, short C5 beeps instead of piercing high pitches
+    const freq = 440; // A4 (soft hum)
+
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(freq, ctx.currentTime);
+
+    gain.gain.setValueAtTime(0.04, ctx.currentTime); // Soft volume (0.04 instead of 0.18)
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.08); // Short duration
+
+    osc.start();
+    osc.stop(ctx.currentTime + 0.1);
   } catch (e) {
     console.error("Audio error:", e);
   }

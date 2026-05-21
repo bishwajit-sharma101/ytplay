@@ -8,6 +8,7 @@
   --text-muted: #64748b;
   
   --neon-blue: #ff6a00;
+  --neon-orange: #ff6a00;
   --neon-purple: #ffb300;
   --neon-pink: #ff3b30;
   --neon-green: #10b981;
@@ -976,48 +977,61 @@ body {
 }
 
 .quiz-option-btn {
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid var(--glass-border);
-  border-radius: 12px;
+  background: var(--bg-dark-surface);
+  border: 2px solid var(--glass-border);
+  border-radius: 14px;
   padding: 16px 20px;
   text-align: left;
-  color: #fff;
+  color: var(--text-light);
   font-size: 15px;
   cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   display: flex;
   align-items: center;
   gap: 15px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
 }
 
 .quiz-option-btn:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: var(--neon-blue);
-  transform: translateX(4px);
+  background: #fff7ed;
+  border-color: var(--neon-orange, #ff6a00);
+  transform: translateX(6px);
+  box-shadow: 0 4px 16px rgba(255, 106, 0, 0.12);
 }
 
 .quiz-option-letter {
-  width: 28px;
-  height: 28px;
-  border-radius: 6px;
-  background: rgba(255, 255, 255, 0.08);
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  border-radius: 8px;
+  background: #f1f5f9;
   display: flex;
   align-items: center;
   justify-content: center;
   font-family: var(--font-gamer);
-  font-weight: 700;
+  font-weight: 800;
   font-size: 13px;
   color: var(--text-muted);
+  border: 1px solid #e2e8f0;
 }
 
 .quiz-option-btn.selected {
-  border-color: var(--neon-purple);
-  background: rgba(155, 81, 224, 0.15);
+  border-color: var(--neon-orange, #ff6a00);
+  background: #fff7ed;
+  box-shadow: 0 4px 20px rgba(255, 106, 0, 0.15);
 }
 
 .quiz-option-btn.selected .quiz-option-letter {
-  background: var(--neon-purple);
+  background: var(--accent-gradient);
   color: #fff;
+  border: none;
+}
+
+.quiz-option-btn.disabled-clue {
+  opacity: 0.35;
+  cursor: not-allowed;
+  transform: none;
+  text-decoration: line-through;
 }
 
 /* Results / Game Over Panel */
@@ -1434,8 +1448,8 @@ body {
   font-family: var(--font-gamer);
   font-size: 11px;
   font-weight: 700;
-  color: #fff;
-  background: rgba(0, 0, 0, 0.35);
+  color: var(--text-light);
+  background: var(--bg-dark-surface);
   border: 1px solid var(--glass-border);
   border-radius: 8px;
   padding: 8px 12px;
@@ -1444,6 +1458,7 @@ body {
   display: flex;
   align-items: center;
   gap: 6px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
 }
 
 .quiz-powerup-btn.double-down-btn {
@@ -1483,14 +1498,7 @@ body {
   cursor: not-allowed;
 }
 
-.quiz-option-btn.disabled-clue {
-  opacity: 0.15;
-  cursor: not-allowed;
-  pointer-events: none;
-  border-color: rgba(255, 255, 255, 0.01) !important;
-  background: rgba(0, 0, 0, 0.25) !important;
-  transform: none !important;
-}
+/* disabled-clue handled above in quiz-option-btn.disabled-clue rule */
 
 /* Welcome Overlay Enhancements */
 .avatar-selection-header {
@@ -2232,3 +2240,54 @@ body {
 .avatar-card.selected .avatar-card-label {
   color: var(--text-light);
 }
+
+/* ── Pathfinder Roadmap Animations ─────────────────────────────────────── */
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.7; transform: scale(0.95); }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.92) translateY(8px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Roadmap node hover lift */
+.roadmap-node-hover:hover {
+  transform: translateY(-3px);
+}
+
+/* Typewriter cursor blink */
+@keyframes caretBlink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+
+/* Milestone detail panel scrollbar */
+.milestone-notes-body::-webkit-scrollbar { width: 4px; }
+.milestone-notes-body::-webkit-scrollbar-track { background: transparent; }
+.milestone-notes-body::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 2px; }
+
+/* Video player wrapper fix for GameArena */
+.video-player-outer-wrapper {
+  position: relative;
+  width: 100%;
+  padding-top: 56.25%;
+  border-radius: 16px;
+  overflow: hidden;
+  background: #000;
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+}
+
+.video-player-outer-wrapper > :not(.speedrun-badge) {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+}
+

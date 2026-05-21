@@ -1,3 +1,4 @@
+import { useState } from "react";
 import YoutubePlayer from "./YoutubePlayer";
 import ChatBox from "./ChatBox";
 import * as sound from "../utils/audio";
@@ -25,25 +26,37 @@ export default function GameArena({
   level
 }) {
   const myUnlockedSkills = getUnlockedSkills(selectedClass || "doomscroller", level || 1);
+  const [videoPlaybackRate, setVideoPlaybackRate] = useState(1);
+  const isSpeedrunner = (selectedClass || "").toLowerCase() === "speedrunner";
 
   const getSkillCost = (skillLevel) => {
     if (skillLevel === 1) return 25;
     if (skillLevel === 10) return 40;
     if (skillLevel === 20) return 60;
     if (skillLevel === 30) return 80;
-    return 100; // Level 40 and 50 are max energy
+    return 100;
   };
 
   const handleUsePowerupClick = (skill) => {
     const cost = getSkillCost(skill.level);
     if (energy < cost) return;
-    sound.playClockTick(); // Click feedback
+    sound.playClockTick();
+
+    // Speedrunner's "2x Speed" is a LOCAL self-buff — toggle video speed directly
+    if (isSpeedrunner && skill.name === "2x Speed") {
+      const newRate = videoPlaybackRate === 2 ? 1 : 2;
+      setVideoPlaybackRate(newRate);
+      // Still deduct energy
+      onUsePowerup({ type: "__local_2x_speed__", cost });
+      return;
+    }
+
     onUsePowerup({ type: skill.name, cost });
   };
 
   const handleSkipToQuiz = () => {
     sound.playClockTick();
-    onVideoFinished(true); // Flag fromClick
+    onVideoFinished(true);
   };
 
   return (
@@ -57,8 +70,27 @@ export default function GameArena({
               onProgress={onVideoProgress}
               onFinished={() => onVideoFinished(false)}
               isFrozen={isFrozen}
+              playbackRate={videoPlaybackRate}
             />
           </div>
+
+          {/* 2x speed active badge */}
+          {videoPlaybackRate === 2 && (
+            <div className="speedrun-badge" style={{
+              position: "absolute", top: "10px", left: "10px",
+              background: "linear-gradient(135deg, #10b981, #059669)",
+              color: "#fff", fontWeight: "900", fontSize: "13px",
+              padding: "4px 12px", borderRadius: "8px",
+              boxShadow: "0 2px 10px rgba(16,185,129,0.5)",
+              letterSpacing: "0.5px", zIndex: 10,
+              animation: "pulse 1.5s infinite",
+              width: "auto",
+              height: "auto",
+              pointerEvents: "none"
+            }}>
+              ⚡ 2× SPEED ACTIVE
+            </div>
+          )}
           
           {/* Active Glitch Overlays */}
           {isFrozen && (

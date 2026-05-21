@@ -189,6 +189,70 @@ app.get("/api/search", async (req, res) => {
   }
 });
 
+// ── Pathfinder: Generate AI Roadmap from conversation answers ──────────────
+app.post("/api/pathfinder/generate", async (req, res) => {
+  const { answers } = req.body; // array of { question, answer }
+  if (!answers || !Array.isArray(answers)) {
+    return res.status(400).json({ error: "answers array required" });
+  }
+
+  const { generateRoadmapFromAnswers } = await import("./geminiService.js");
+  try {
+    const roadmap = await generateRoadmapFromAnswers(answers);
+    res.json(roadmap);
+  } catch (err) {
+    console.error("[Pathfinder] Roadmap generation failed:", err.message);
+    res.status(500).json({ error: "Roadmap generation failed", details: err.message });
+  }
+});
+
+// ── Pathfinder: Generate AI Study Notes for a milestone ───────────────────
+app.post("/api/pathfinder/study-notes", async (req, res) => {
+  const { topic, milestone } = req.body;
+  if (!topic || !milestone) {
+    return res.status(400).json({ error: "topic and milestone required" });
+  }
+
+  const { generateStudyNotes } = await import("./geminiService.js");
+  try {
+    const notes = await generateStudyNotes(topic, milestone);
+    res.json({ notes });
+  } catch (err) {
+    console.error("[Pathfinder] Study notes generation failed:", err.message);
+    res.status(500).json({ error: "Study notes generation failed" });
+  }
+});
+
+// ── Solo XP: Award XP for watching a video solo (no duel) ─────────────────
+app.post("/api/solo-xp", (req, res) => {
+  const { username, xpEarned, videoTitle } = req.body;
+  if (!username || !xpEarned) {
+    return res.status(400).json({ error: "username and xpEarned required" });
+  }
+
+  let user = leaderboard.find((u) => u.username.toLowerCase() === username.toLowerCase());
+  if (!user) {
+    return res.status(404).json({ error: "User not found" });
+  }
+
+  user.xp = (user.xp || 0) + xpEarned;
+  const newLevel = Math.floor(user.xp / 200) + 1;
+  const leveledUp = newLevel > user.level;
+  user.level = newLevel;
+
+  if (videoTitle) {
+    if (!user.watchHistory) user.watchHistory = [];
+    user.watchHistory.unshift({ title: videoTitle, timestamp: new Date().toISOString(), solo: true });
+    if (user.watchHistory.length > 20) user.watchHistory.pop();
+    user.totalVideosWatched = (user.totalVideosWatched || 0) + 1;
+  }
+
+  leaderboard.sort((a, b) => b.xp - a.xp);
+  saveLeaderboard();
+
+  res.json({ xp: user.xp, level: user.level, leveledUp });
+});
+
 // Socket.io Handlers
 io.on("connection", (socket) => {
   console.log(`[Socket] Connected: ${socket.id}`);
@@ -414,6 +478,11 @@ io.on("connection", (socket) => {
     if (player && opponent) {
       console.log(`[Powerup] Player "${player.username}" used "${type}" on "${opponent.username}"`);
       
+      if (type === "__local_2x_speed__") {
+        // Local self-buff, server does not propagate it as an attack/debuff to the opponent.
+        return;
+      }
+
       if (!opponent.isBot) {
         io.to(opponent.socketId).emit("opponent_powerup", { type });
       } else {
@@ -616,10 +685,21 @@ function startGameplay(room) {
 
 // Bot Simulation Engine
 function simulateBotProgress(room, botPlayer) {
-  let progress = 0;
-  // Bot watches video at custom intervals (10-15 seconds total for demo purposes, instead of full video length,
-  // but matches realistic scaling. Let's make it watch the video in ~30 seconds for a fun, fast gameplay demo!)
-  const totalWatchTimeMs = 30000; 
+  let progressFloat = 0;
+  
+  // Calculate human-like watch speed (slower, matches realistic scaling)
+  let watchSpeedMultiplier = 1.0;
+  if (botPlayer.selectedClass === "speedrunner") {
+    watchSpeedMultiplier = 0.7; // 30% faster
+  } else if (botPlayer.selectedClass === "doomscroller") {
+    watchSpeedMultiplier = 1.25; // 25% slower (gets distracted)
+  }
+  
+  const videoDurationMs = (room.video?.duration || 300) * 1000;
+  // Bot watches at a human-like pace (e.g. 50% of video duration, capped between 60s and 120s)
+  const baseWatchTimeMs = Math.max(60000, Math.min(videoDurationMs * 0.5, 120000));
+  const totalWatchTimeMs = baseWatchTimeMs * watchSpeedMultiplier;
+  
   const updateIntervalMs = 500;
   const steps = totalWatchTimeMs / updateIntervalMs;
   const increment = 100 / steps;
@@ -641,19 +721,20 @@ function simulateBotProgress(room, botPlayer) {
     if (botPlayer.isFrozen) {
       io.to(room.id).emit("opponent_progress", {
         socketId: botPlayer.socketId,
-        progress
+        progress: Math.round(progressFloat)
       });
       return;
     }
 
     currentStep++;
-    progress = Math.min(100, Math.round(progress + increment));
-    botPlayer.progress = progress;
+    progressFloat = Math.min(100, progressFloat + increment);
+    const displayProgress = Math.round(progressFloat);
+    botPlayer.progress = displayProgress;
 
     // Broadcast bot progress to player
     io.to(room.id).emit("opponent_progress", {
       socketId: botPlayer.socketId,
-      progress
+      progress: displayProgress
     });
 
     // Send mid chat
@@ -664,7 +745,7 @@ function simulateBotProgress(room, botPlayer) {
 
     // Bot random powerup attack simulation (15% chance every 8 seconds)
     const now = Date.now();
-    if (progress < 100 && now - botPlayer.lastPowerupTime > 8000 && Math.random() < 0.15) {
+    if (progressFloat < 100 && now - botPlayer.lastPowerupTime > 8000 && Math.random() < 0.15) {
       const type = Math.random() < 0.5 ? "freeze" : "blur";
       botPlayer.lastPowerupTime = now;
       
@@ -684,7 +765,7 @@ function simulateBotProgress(room, botPlayer) {
       }
     }
 
-    if (progress >= 100) {
+    if (progressFloat >= 100) {
       clearInterval(interval);
       botPlayer.finished = true;
       console.log(`[Bot Simulation] Bot "${botPlayer.username}" finished video in room "${room.id}"`);

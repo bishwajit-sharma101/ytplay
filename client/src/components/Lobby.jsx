@@ -16,8 +16,8 @@ export default function Lobby({
   onReadyToPlay,
   onForfeit
 }) {
-  const isMeReady = room?.players.find((p) => p.socketId === socket?.id)?.ready;
-  const isOpponentReady = room?.players.find((p) => p.socketId !== socket?.id)?.ready;
+  const isMeReady = room?.players.find((p) => p.username.toLowerCase() === username.toLowerCase())?.ready;
+  const isOpponentReady = room?.players.find((p) => p.username.toLowerCase() !== username.toLowerCase())?.ready;
 
   const handleReadyClick = () => {
     sound.playClockTick();

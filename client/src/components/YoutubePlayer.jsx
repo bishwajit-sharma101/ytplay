@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 
-export default function YoutubePlayer({ videoId, onProgress, onFinished, isFrozen }) {
+export default function YoutubePlayer({ videoId, onProgress, onFinished, isFrozen, playbackRate = 1 }) {
   const playerRef = useRef(null);
   const progressIntervalRef = useRef(null);
   const containerId = "youtube-iframe-player";
@@ -8,11 +8,23 @@ export default function YoutubePlayer({ videoId, onProgress, onFinished, isFroze
   // Use refs to keep callbacks stable so they never trigger the player recreation effect
   const onProgressRef = useRef(onProgress);
   const onFinishedRef = useRef(onFinished);
+  const playbackRateRef = useRef(playbackRate);
 
   useEffect(() => {
     onProgressRef.current = onProgress;
     onFinishedRef.current = onFinished;
+    playbackRateRef.current = playbackRate;
   });
+
+  useEffect(() => {
+    if (playerRef.current && typeof playerRef.current.setPlaybackRate === "function") {
+      try {
+        playerRef.current.setPlaybackRate(playbackRate);
+      } catch (e) {
+        console.warn("[YT Player] Could not set playback rate:", e);
+      }
+    }
+  }, [playbackRate]);
 
   useEffect(() => {
     if (playerRef.current && typeof playerRef.current.pauseVideo === "function" && typeof playerRef.current.playVideo === "function") {
@@ -75,21 +87,23 @@ export default function YoutubePlayer({ videoId, onProgress, onFinished, isFroze
             autoplay: 1,      // Autoplay the video
             controls: 1,      // Show controls
             rel: 0,           // Disable related videos at the end
-            modestbranding: 1 // Clean player look
+            modestbranding: 1,// Clean player look
+            mute: 0           // Do not mute the video sound
           },
           events: {
             onReady: (event) => {
               if (isDestroyed) return;
               console.log("[YT Player] Ready and playing:", videoId);
               
-              // Mute/Unmute state depends on browser autoplay settings
-              // We try to autoplay. Some browsers require it to be muted,
-              // but since they have interactive controls, they can unmute.
               try {
                 if (isFrozen) {
                   event.target.pauseVideo();
                 } else {
                   event.target.playVideo();
+                }
+                // Apply initial playback rate
+                if (playbackRateRef.current && playbackRateRef.current !== 1) {
+                  event.target.setPlaybackRate(playbackRateRef.current);
                 }
               } catch (err) {
                 console.warn("[YT Player] Autoplay failed or blocked:", err);
@@ -105,6 +119,15 @@ export default function YoutubePlayer({ videoId, onProgress, onFinished, isFroze
                 if (isFrozen) {
                   event.target.pauseVideo();
                 } else {
+                  event.target.playVideo();
+                  // Re-apply playback rate just in case YouTube reset it
+                  if (playbackRateRef.current) {
+                    try {
+                      event.target.setPlaybackRate(playbackRateRef.current);
+                    } catch (e) {
+                      console.warn("[YT Player] setPlaybackRate failed on PLAYING:", e);
+                    }
+                  }
                   startProgressTracking(event.target);
                 }
               } else {
