@@ -1,5 +1,10 @@
 <div align="center">
 
+<img width="100%" src="https://github.com/user-attachments/assets/49fbb51a-d29e-4dd9-b575-30ce64309475"/>
+
+<br/>
+<br/>
+
 # ⚔️ ytPlay
 
 ### **Learn. Compete. Ascend.**
@@ -17,9 +22,9 @@
 > Climb ranked domains.  
 > Become legendary.
 
----
-
 </div>
+
+---
 
 <br/>
 
@@ -55,21 +60,9 @@ This is not just gamified learning.
 
 # ⚡ CORE GAMEPLAY LOOP
 
-```text
-Search Topic
-    ↓
-Enter Matchmaking
-    ↓
-Synchronized Video Duel
-    ↓
-Live Cognitive Challenges
-    ↓
-Real-Time Tactical Combat
-    ↓
-AI Quiz Showdown
-    ↓
-XP / Rank / Skill Unlocks
-```
+<br/>
+
+<img width="100%" src="https://github.com/user-attachments/assets/ba1cc3b2-52b9-4021-8b5d-eb6dc585a2fd"/>
 
 </div>
 
