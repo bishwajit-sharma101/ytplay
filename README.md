@@ -233,6 +233,8 @@ The strongest learners dominate:
 
 # 👑 DOMAIN BOSSES (PLANNED)
 
+<img width="1536" height="1024" alt="Image" src="https://github.com/user-attachments/assets/afc16039-fc2a-4323-8db6-cf322667d8eb" />
+
 Elite players can rise to become:
 # DOMAIN BOSSES
 
