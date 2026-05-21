@@ -1,0 +1,14 @@
+{
+  "name": "ytplay",
+  "version": "1.0.0",
+  "description": "ytPlay - Multiplayer Video Matchmaking & Quiz Duel",
+  "scripts": {
+    "install-all": "npm install --prefix client && npm install --prefix server",
+    "server": "npm run dev --prefix server",
+    "client": "npm run dev --prefix client",
+    "dev": "npx concurrently --kill-others \"npm run server\" \"npm run client\""
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
