@@ -231,39 +231,33 @@ The strongest learners dominate:
 
 <br/>
 
-# 👑 DOMAIN BOSSES (PLANNED)
+# 👑 DOMAIN BOSSES & ASCENSION BATTLES (PLANNED)
 
-<img width="1536" height="1024" alt="Image" src="https://github.com/user-attachments/assets/afc16039-fc2a-4323-8db6-cf322667d8eb" />
+<div align="center">
 
-Elite players can rise to become:
-# DOMAIN BOSSES
+<img width="100%" src="https://github.com/user-attachments/assets/afc16039-fc2a-4323-8db6-cf322667d8eb"/>
 
-Examples:
+</div>
+
+Elite players can rise to become legendary **Domain Bosses** and rule ranked territories like:
 - 👑 JavaScript Tyrant
 - 👑 Python Sovereign
 - 👑 React Emperor
 - 👑 AI Overlord
 
-Bosses:
-- own ranked territories,
-- defend their throne,
-- gain legendary status,
-- and become feared throughout the platform.
+To challenge a boss, players must defeat challengers consecutively and absorb their XP before earning the right to enter an **Ascension Battle**.
 
----
+If the challenger wins:
+- ⚔️ takes all accumulated XP
+- 👑 claims the throne
+- 🔥 becomes the new Domain Boss
 
-<br/>
+If the boss wins:
+- ☠️ absorbs all challenger XP
+- 🔥 grows stronger
+- 👑 remains undefeated
 
-# ⚠️ ASCENSION BATTLES (PLANNED)
-
-Rare cinematic boss duels where:
-- challengers risk EVERYTHING,
-- bosses defend their domain,
-- and entire leaderboards can collapse in one battle.
-
-## High Stakes.
-## No Mercy.
-## No Second Chances.
+## High Stakes. No Mercy. No Second Chances.
 
 ---
 
