@@ -3,332 +3,173 @@
 <img width="100%" src="https://github.com/user-attachments/assets/49fbb51a-d29e-4dd9-b575-30ce64309475"/>
 
 <br/>
-<br/>
 
 # ⚔️ Kaevrix
 
-### **Learn. Compete. Ascend.**
+### Real-Time Competitive Learning Platform
+
+<p align="center">
+  Kaevrix transforms educational content into synchronized multiplayer experiences using<br/>
+  real-time systems, AI-generated challenges, and competitive gameplay mechanics.
+</p>
+
+<p align="center">
+  <a href="#-overview">Overview</a> •
+  <a href="#-feature-showcase">Features</a> •
+  <a href="#-tech-stack">Tech Stack</a> •
+  <a href="#-system-design">Architecture</a>
+</p>
 
 <img src="https://img.shields.io/badge/STATUS-IN%20DEVELOPMENT-orange?style=for-the-badge&logo=github">
-<img src="https://img.shields.io/badge/POWERED%20BY-React%20%2B%20Socket.io-black?style=for-the-badge">
-<img src="https://img.shields.io/badge/GENRE-Educational%20Esports-red?style=for-the-badge">
-
-<br/>
-
-> ### **The world's first real-time competitive learning arena.**
->
-> Watch educational videos.  
-> Battle opponents live.  
-> Climb ranked domains.  
-> Become legendary.
+<img src="https://img.shields.io/badge/STACK-React%20%2B%20Socket.io-black?style=for-the-badge">
+<img src="https://img.shields.io/badge/TYPE-Educational%20Platform-red?style=for-the-badge">
 
 </div>
 
 ---
 
-<br/>
+# 🚀 Overview
+
+Kaevrix is a multiplayer educational platform designed around real-time interaction and competitive learning.
+
+Instead of passively consuming tutorials, users participate in synchronized learning sessions where they can compete against other players through live quizzes, ranking systems, AI-generated challenges, and educational progression mechanics.
+
+The platform focuses on:
+- real-time communication,
+- synchronized multiplayer systems,
+- AI-assisted learning workflows,
+- and responsive competitive experiences.
+
+---
+
+# 📸 Feature Showcase
+
+## 🧭 AI-Powered PathFinder
+
+Kaevrix includes an intelligent PathFinder system that generates personalized learning roadmaps based on a user's current goals and skill level.
+
+Users answer a few onboarding questions, after which the platform:
+- generates a structured roadmap,
+- recommends learning resources,
+- organizes topics into progressive stages,
+- and creates AI-generated notes for each module.
 
 <div align="center">
 
-# 🎥 WHAT IS Kaevrix?
-
-</div>
-
-Kaevrix transforms passive learning into a **high-stakes multiplayer experience**.
-
-Instead of simply watching tutorials alone, players enter synchronized educational duels where they:
-
-- ⚔️ Fight opponents in real-time
-- 🧠 Solve AI-generated cognitive challenges
-- 🔥 Deploy tactical abilities during video playback
-- 🚀 Race through quizzes for score multipliers
-- 👑 Climb ranked arenas and challenge elite players
-
-This is not just gamified learning.
-
-<div align="center">
-
-# THIS IS EDUCATIONAL ESPORTS.
+https://github.com/user-attachments/assets/813f7226-f49b-482e-844a-7063a80d59a2
 
 </div>
 
 ---
 
-<br/>
+## ⚔️ Real-Time Multiplayer Battles
 
-<div align="center">
+Players can enter synchronized educational matches where both participants watch the same content while competing through live quizzes and reaction-based challenges.
 
-# ⚡ CORE GAMEPLAY LOOP
-
-<br/>
-
-<img width="100%" src="https://github.com/user-attachments/assets/ba1cc3b2-52b9-4021-8b5d-eb6dc585a2fd"/>
-
-</div>
-
----
-
-<br/>
-
-# 🧠 REAL-TIME LEARNING COMBAT
-
-Unlike traditional educational platforms, Kaevrix turns attention into gameplay.
-
-Players battle while learning using:
-- ⚡ Focus attacks
-- 👾 Visual disruptions
-- 🧩 Observation challenges
-- 🔥 Combo systems
-- 🛡 Defensive abilities
-- 🧠 Memory-based mechanics
-
-Every duel rewards:
-- concentration,
-- reaction speed,
-- pattern recognition,
-- and actual understanding.
+### Core Systems
+- Live matchmaking
+- Synchronized video playback
+- AI-generated quizzes
+- Real-time scoring
+- Spectator systems
+- Ranking progression
 
 ---
 
-<br/>
+## 🧠 AI-Generated Learning Challenges
 
-<div align="center">
+Kaevrix dynamically generates contextual quiz systems during learning sessions using AI-assisted workflows.
 
-# 🎮 CLASS SYSTEM
+Example challenge types:
+- Predict the next output
+- Identify concepts from the video
+- Complete missing code
+- Recall previously explained topics
 
-Choose your cognitive combat archetype.
-
-</div>
-
-<table>
-<tr>
-<td width="25%" align="center">
-
-## ⚡ Speed Runner
-Fast. Aggressive. Relentless.
-
-Rush through videos and dominate with momentum.
-
-</td>
-
-<td width="25%" align="center">
-
-## 🧠 Mind Overlord
-Control. Manipulate. Outthink.
-
-Master cognitive pressure and strategic disruption.
-
-</td>
-
-<td width="25%" align="center">
-
-## 👾 Chaos Hacker
-Confuse. Corrupt. Destroy.
-
-Break enemy focus using unpredictable attacks.
-
-</td>
-
-<td width="25%" align="center">
-
-## 🛡 Focus Monk
-Calm. Defensive. Unbreakable.
-
-Convert pressure into power through discipline.
-
-</td>
-</tr>
-</table>
+The goal is to make educational sessions more interactive, competitive, and engaging.
 
 ---
 
-<br/>
+## 🏆 Ranked Progression System
 
-# 🌳 SKILL TREE PROGRESSION
+Players progress through competitive learning domains and gain:
+- XP
+- Rank progression
+- Win streaks
+- Domain ratings
+- Competitive stats
 
-Players evolve over time by unlocking:
-- 🔓 Advanced attacks
-- 🔓 Passive abilities
-- 🔓 Ultimate powers
-- 🔓 Combo enhancements
-- 🔓 Domain-specific mastery
-
-Every class becomes stronger through:
-# learning + competitive victories.
+Future updates will introduce advanced tournament systems, ranked seasons, and domain-based progression mechanics.
 
 ---
 
-<br/>
+# ⚡ Real-Time System Design
 
-<div align="center">
+Kaevrix is built around low-latency multiplayer infrastructure designed for synchronized educational experiences.
 
-# 🔥 LIVE VIDEO CHALLENGES
-
-</div>
-
-During educational videos, players receive:
-real-time cognitive battles.
-
-### Example Challenges:
-- “What variable was just shown?”
-- “Predict the next output.”
-- “What did the instructor just explain?”
-- “Complete the missing code.”
-
-The fastest correct player gains:
-- ⚡ combo boosts
-- 🔋 energy
-- 🎯 score multipliers
-- 🧠 tactical advantages
+### Engineering Highlights
+- WebSocket-based multiplayer architecture
+- Real-time state synchronization using Socket.IO
+- Concurrent matchmaking systems
+- AI-assisted quiz generation pipelines
+- Optimized client-side audio systems
+- Dynamic session management
 
 ---
 
-<br/>
-
-# 🤖 AI-GENERATED QUIZ SYSTEM
-
-Every duel dynamically generates:
-- contextual quizzes,
-- challenge prompts,
-- cognitive tests,
-- adaptive educational battles.
-
-Powered using:
-- video analysis,
-- AI-generated question systems,
-- educational topic mapping.
-
-This ensures:
-- endless replayability,
-- unpredictable matches,
-- adaptive difficulty.
-
----
-
-<br/>
-
-<div align="center">
-
-# 🏆 RANKED ARENAS
-
-</div>
-
-Players gain:
-- 🎖 XP
-- 📈 Rank
-- 🔥 Streaks
-- 👑 Prestige
-- ⚔️ Arena Status
-
-The strongest learners dominate:
-- JavaScript Arenas
-- Python Arenas
-- AI Domains
-- Physics Arenas
-- Math Battlegrounds
-
----
-
-<br/>
-
-# 👑 DOMAIN BOSSES & ASCENSION BATTLES (PLANNED)
-
-<div align="center">
-
-<img width="100%" src="https://github.com/user-attachments/assets/afc16039-fc2a-4323-8db6-cf322667d8eb"/>
-
-</div>
-
-Elite players can rise to become legendary **Domain Bosses** and rule ranked territories like:
-- 👑 JavaScript Tyrant
-- 👑 Python Sovereign
-- 👑 React Emperor
-- 👑 AI Overlord
-
-To challenge a boss, players must defeat challengers consecutively and absorb their XP before earning the right to enter an **Ascension Battle**.
-
-If the challenger wins:
-- ⚔️ takes all accumulated XP
-- 👑 claims the throne
-- 🔥 becomes the new Domain Boss
-
-If the boss wins:
-- ☠️ absorbs all challenger XP
-- 🔥 grows stronger
-- 👑 remains undefeated
-
-## High Stakes. No Mercy. No Second Chances.
-
----
-
-<br/>
-
-<div align="center">
-
-# 🎬 CINEMATIC EXPERIENCE
-
-</div>
-
-Kaevrix is designed to feel like:
-- esports,
-- anime tournament arcs,
-- raid boss encounters,
-- and high-stakes competitive gaming.
-
-Features include:
-- 🔥 cinematic intros
-- ⚡ dramatic matchmaking
-- 🎵 battle music
-- 👾 animated transitions
-- 🧠 psychological pressure systems
-- 👑 legendary boss encounters
-
----
-
-<br/>
-
-# 🛠 TECH STACK
+# 🛠 Tech Stack
 
 <div align="center">
 
 | Frontend | Backend | Systems |
 |---|---|---|
-| React.js | Node.js | Socket.io |
-| CSS Animations | Express.js | Real-time Sync |
-| Web Audio API | Gemini AI | Matchmaking |
-| YouTube IFrame API | yt-search | Multiplayer State |
+| React.js | Node.js | Socket.IO |
+| Tailwind CSS | Express.js | Real-Time Sync |
+| Framer Motion | MongoDB | Matchmaking |
+| Web Audio API | Gemini API | Multiplayer State |
 
 </div>
 
 ---
 
-<br/>
+# 📂 Project Structure
 
-<div align="center">
-
-# 🌍 VISION
-
-</div>
-
-Kaevrix aims to create:
-
-# The world's first competitive learning ecosystem.
-
-<img width="1536" height="1024" alt="Image" src="https://github.com/user-attachments/assets/0d9a6674-354e-4b81-91d7-8852ccff391a" />
-
-
-- knowledge becomes power,
-- skill becomes status,
-- and learning becomes legendary.
+```bash
+kaevrix/
+├── client/        # Frontend application
+├── server/        # Backend + WebSocket systems
+└── README.md
+```
 
 ---
 
-<br/>
+# 🌍 Vision
+
+Kaevrix explores the intersection of:
+- education,
+- real-time systems,
+- multiplayer interaction,
+- and AI-assisted learning.
+
+The long-term goal is to create a scalable competitive learning ecosystem where educational experiences feel interactive, social, and engaging.
+
+---
 
 <div align="center">
 
-# ⚔️ ENTER THE ARENA
+### 👤 Author
 
-### Watch. Learn. Fight. Ascend.
+**Bishwajit Sharma**  
+*Full-Stack Developer focused on real-time systems, scalable architectures, and AI-powered applications.*
+
+<p align="center">
+  <a href="https://www.linkedin.com/in/bishwajitsharma-in/">
+    <img src="https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white" />
+  </a>
+
+  <a href="https://github.com/bishwajit-sharma101">
+    <img src="https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white" />
+  </a>
+</p>
 
 </div>
