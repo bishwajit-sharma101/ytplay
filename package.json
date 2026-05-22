@@ -1,7 +1,7 @@
 {
-  "name": "ytplay",
+  "name": "kaevrix",
   "version": "1.0.0",
-  "description": "ytPlay - Multiplayer Video Matchmaking & Quiz Duel",
+  "description": "Kaevrix - Multiplayer Video Matchmaking & Quiz Duel",
   "scripts": {
     "install-all": "npm install --prefix client && npm install --prefix server",
     "server": "npm run dev --prefix server",

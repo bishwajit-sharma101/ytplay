@@ -5,7 +5,7 @@
 <br/>
 <br/>
 
-# ⚔️ ytPlay
+# ⚔️ Kaevrix
 
 ### **Learn. Compete. Ascend.**
 
@@ -30,11 +30,11 @@
 
 <div align="center">
 
-# 🎥 WHAT IS ytPlay?
+# 🎥 WHAT IS Kaevrix?
 
 </div>
 
-ytPlay transforms passive learning into a **high-stakes multiplayer experience**.
+Kaevrix transforms passive learning into a **high-stakes multiplayer experience**.
 
 Instead of simply watching tutorials alone, players enter synchronized educational duels where they:
 
@@ -72,7 +72,7 @@ This is not just gamified learning.
 
 # 🧠 REAL-TIME LEARNING COMBAT
 
-Unlike traditional educational platforms, ytPlay turns attention into gameplay.
+Unlike traditional educational platforms, Kaevrix turns attention into gameplay.
 
 Players battle while learning using:
 - ⚡ Focus attacks
@@ -269,7 +269,7 @@ If the boss wins:
 
 </div>
 
-ytPlay is designed to feel like:
+Kaevrix is designed to feel like:
 - esports,
 - anime tournament arcs,
 - raid boss encounters,
@@ -310,7 +310,7 @@ Features include:
 
 </div>
 
-ytPlay aims to create:
+Kaevrix aims to create:
 
 # The world's first competitive learning ecosystem.
 

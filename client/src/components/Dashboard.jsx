@@ -19,6 +19,7 @@ const LIVE_BATTLES = [
 ];
 
 export default function Dashboard({
+  isDarkMode,
   curatedVideos,
   selectedVideo,
   setSelectedVideo,
@@ -121,7 +122,11 @@ export default function Dashboard({
             {/* Hero Section */}
             {!searchQuery && (
               <div style={{
-                background: "linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #1e0a00 100%)",
+                background: isDarkMode 
+                  ? "linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #1e0a00 100%)" 
+                  : "linear-gradient(135deg, #fffaf5 0%, #ffedd5 60%, #ffe3d1 100%)",
+                border: isDarkMode ? "none" : "1px solid rgba(255, 106, 0, 0.2)",
+                boxShadow: isDarkMode ? "none" : "0 10px 30px rgba(255, 106, 0, 0.06)",
                 borderRadius: "24px",
                 padding: "40px",
                 marginBottom: "32px",
@@ -129,18 +134,18 @@ export default function Dashboard({
                 overflow: "hidden",
               }}>
                 {/* Background decorations */}
-                <div style={{ position: "absolute", top: "-40px", right: "-40px", width: "200px", height: "200px", borderRadius: "50%", background: "radial-gradient(circle, rgba(255,106,0,0.2) 0%, transparent 70%)", pointerEvents: "none" }} />
-                <div style={{ position: "absolute", bottom: "-30px", left: "30%", width: "150px", height: "150px", borderRadius: "50%", background: "radial-gradient(circle, rgba(139,92,246,0.15) 0%, transparent 70%)", pointerEvents: "none" }} />
+                <div style={{ position: "absolute", top: "-40px", right: "-40px", width: "200px", height: "200px", borderRadius: "50%", background: isDarkMode ? "radial-gradient(circle, rgba(255,106,0,0.2) 0%, transparent 70%)" : "radial-gradient(circle, rgba(255,106,0,0.22) 0%, transparent 70%)", pointerEvents: "none" }} />
+                <div style={{ position: "absolute", bottom: "-30px", left: "30%", width: "150px", height: "150px", borderRadius: "50%", background: isDarkMode ? "radial-gradient(circle, rgba(139,92,246,0.15) 0%, transparent 70%)" : "radial-gradient(circle, rgba(255,106,0,0.12) 0%, transparent 70%)", pointerEvents: "none" }} />
 
                 <div style={{ position: "relative", zIndex: 1 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "12px" }}>
                     <span style={{ background: "rgba(255,106,0,0.2)", color: "#ff6a00", padding: "4px 12px", borderRadius: "20px", fontSize: "12px", fontWeight: "800", border: "1px solid rgba(255,106,0,0.3)" }}>⚔️ DUEL ARENA</span>
                     <span style={{ background: "rgba(16,185,129,0.2)", color: "#10b981", padding: "4px 12px", borderRadius: "20px", fontSize: "12px", fontWeight: "800", border: "1px solid rgba(16,185,129,0.3)", animation: "pulse 2s infinite" }}>🔴 LIVE</span>
                   </div>
-                  <h1 style={{ fontSize: "36px", fontWeight: "900", color: "#ffffff", marginBottom: "8px", lineHeight: "1.2" }}>
+                  <h1 style={{ fontSize: "36px", fontWeight: "900", color: isDarkMode ? "#ffffff" : "#1e293b", marginBottom: "8px", lineHeight: "1.2" }}>
                     Choose Your <span style={{ background: "linear-gradient(135deg, #ff6a00, #ffb300)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Battle Ground</span>
                   </h1>
-                  <p style={{ color: "rgba(255,255,255,0.6)", fontSize: "16px", maxWidth: "500px", lineHeight: "1.6" }}>
+                  <p style={{ color: isDarkMode ? "rgba(255,255,255,0.6)" : "#475569", fontSize: "16px", maxWidth: "500px", lineHeight: "1.6" }}>
                     Select a video, enter matchmaking, and face off against a real opponent. The AI generates your quiz from the video content.
                   </p>
 
@@ -153,17 +158,25 @@ export default function Dashboard({
                         style={{
                           display: "flex", alignItems: "center", gap: "6px",
                           padding: "8px 16px", borderRadius: "20px",
-                          border: "1px solid rgba(255,255,255,0.12)",
-                          background: "rgba(255,255,255,0.07)",
-                          color: "#fff", fontSize: "13px", fontWeight: "700",
+                          border: isDarkMode ? "1px solid rgba(255,255,255,0.12)" : "1px solid rgba(255, 106, 0, 0.22)",
+                          background: isDarkMode ? "rgba(255,255,255,0.07)" : "rgba(255, 255, 255, 0.75)",
+                          color: isDarkMode ? "#fff" : "#1e293b", fontSize: "13px", fontWeight: "700",
                           cursor: "pointer", transition: "all 0.2s",
                           backdropFilter: "blur(8px)",
                         }}
-                        onMouseOver={e => { e.currentTarget.style.background = `${t.color}22`; e.currentTarget.style.borderColor = t.color; }}
-                        onMouseOut={e => { e.currentTarget.style.background = "rgba(255,255,255,0.07)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.12)"; }}
+                        onMouseOver={e => { 
+                          e.currentTarget.style.background = `${t.color}22`; 
+                          e.currentTarget.style.borderColor = t.color; 
+                        }}
+                        onMouseOut={e => { 
+                          e.currentTarget.style.background = isDarkMode ? "rgba(255,255,255,0.07)" : "rgba(255, 255, 255, 0.75)"; 
+                          e.currentTarget.style.borderColor = isDarkMode ? "rgba(255,255,255,0.12)" : "rgba(255, 106, 0, 0.22)"; 
+                        }}
                       >
                         {t.icon} {t.label}
-                        <span style={{ fontSize: "11px", opacity: 0.7 }}>{t.players.toLocaleString()} playing</span>
+                        <span style={{ fontSize: "11px", color: isDarkMode ? "rgba(255,255,255,0.7)" : "#64748b", fontWeight: "normal" }}>
+                          {t.players.toLocaleString()} playing
+                        </span>
                       </button>
                     ))}
                   </div>

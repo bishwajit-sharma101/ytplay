@@ -119,8 +119,8 @@ export default function PathfinderOnboarding({ username, backendUrl, onRoadmapRe
 
         const roadmap = await res.json();
         // Save to localStorage
-        localStorage.setItem(`ytplay_roadmap_${username}`, JSON.stringify(roadmap));
-        localStorage.setItem(`ytplay_roadmap_answers_${username}`, JSON.stringify(payload));
+        localStorage.setItem(`kaevrix_roadmap_${username}`, JSON.stringify(roadmap));
+        localStorage.setItem(`kaevrix_roadmap_answers_${username}`, JSON.stringify(payload));
 
         setTimeout(() => {
           onRoadmapReady(roadmap);

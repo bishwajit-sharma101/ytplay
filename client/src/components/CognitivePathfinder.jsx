@@ -6,8 +6,8 @@ import PathfinderRoadmap from "./PathfinderRoadmap";
 const BACKEND_URL = window.location.hostname === "localhost" ? "http://localhost:5000" : "";
 
 export default function CognitivePathfinder({ username, onTriggerSearch }) {
-  const roadmapKey = `ytplay_roadmap_progress_${username}`;
-  const answersKey = `ytplay_roadmap_answers_${username}`;
+  const roadmapKey = `kaevrix_roadmap_progress_${username}`;
+  const answersKey = `kaevrix_roadmap_answers_${username}`;
 
   const [roadmap, setRoadmap] = useState(() => {
     const saved = localStorage.getItem(roadmapKey);

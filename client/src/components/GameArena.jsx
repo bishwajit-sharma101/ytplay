@@ -282,7 +282,7 @@ export default function GameArena({
                   {activeInVideoQuestion.options.map((opt, oIdx) => {
                     let btnBg = "var(--bg-dark-surface)";
                     let btnBorder = "1px solid var(--glass-border)";
-                    let letterBg = "rgba(255,255,255,0.05)";
+                    let letterBg = "rgba(128,128,128,0.15)";
                     let letterColor = "var(--text-muted)";
 
                     if (feedbackActive) {
@@ -315,7 +315,7 @@ export default function GameArena({
                           borderRadius: "10px",
                           padding: "10px 14px",
                           textAlign: "left",
-                          color: "#fff",
+                          color: "var(--text-light)",
                           fontSize: "13px",
                           cursor: feedbackActive ? "not-allowed" : "pointer",
                           transition: "all 0.2s ease",

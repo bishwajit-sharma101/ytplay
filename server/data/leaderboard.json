@@ -1,15 +1,20 @@
 [
   {
     "username": "blank",
-    "xp": 1660,
+    "xp": 1775,
     "level": 9,
     "wins": 10,
-    "losses": 2,
-    "avatar": "https://api.dicebear.com/7.x/bottts/svg?seed=Gizmo&backgroundColor=transparent",
-    "selectedClass": "glitchmancer",
-    "totalVideosWatched": 5,
-    "totalWatchTime": 1813,
+    "losses": 3,
+    "avatar": "https://api.dicebear.com/7.x/bottts/svg?seed=Cypher&backgroundColor=transparent",
+    "selectedClass": "doomscroller",
+    "totalVideosWatched": 6,
+    "totalWatchTime": 2211,
     "watchHistory": [
+      {
+        "id": "bCkfU_wHPcY",
+        "title": "All The JavaScript You Need BEFORE React",
+        "timestamp": "2026-05-22T08:13:35.627Z"
+      },
       {
         "id": "lkIFF4maKMU",
         "title": "100+ JavaScript Concepts you Need to Know",

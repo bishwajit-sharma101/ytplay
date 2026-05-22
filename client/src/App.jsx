@@ -25,15 +25,15 @@ const getRankTitle = (level) => {
 
 export default function App() {
   // Authentication / Profile
-  const [username, setUsername] = useState(() => localStorage.getItem("ytplay_username") || "");
-  const [avatar, setAvatar] = useState(() => localStorage.getItem("ytplay_avatar") || DEFAULT_AVATAR);
-  const [selectedClass, setSelectedClass] = useState(() => localStorage.getItem("ytplay_class") || "doomscroller");
+  const [username, setUsername] = useState(() => localStorage.getItem("kaevrix_username") || "");
+  const [avatar, setAvatar] = useState(() => localStorage.getItem("kaevrix_avatar") || DEFAULT_AVATAR);
+  const [selectedClass, setSelectedClass] = useState(() => localStorage.getItem("kaevrix_class") || "doomscroller");
   const [isRegistered, setIsRegistered] = useState(false);
   const [xp, setXp] = useState(0);
   const [level, setLevel] = useState(1);
   const [wins, setWins] = useState(0);
   const [losses, setLosses] = useState(0);
-  const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem("ytplay_theme") === "dark");
+  const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem("kaevrix_theme") === "dark");
 
   // Powerups / V2 state
   const [energy, setEnergy] = useState(0);
@@ -101,11 +101,11 @@ export default function App() {
 
   useEffect(() => {
     if (isDarkMode) {
+      localStorage.setItem("kaevrix_theme", "dark");
       document.body.classList.add("dark-theme");
-      localStorage.setItem("ytplay_theme", "dark");
     } else {
+      localStorage.setItem("kaevrix_theme", "light");
       document.body.classList.remove("dark-theme");
-      localStorage.setItem("ytplay_theme", "light");
     }
   }, [isDarkMode]);
 
@@ -145,7 +145,7 @@ export default function App() {
     if (avatar && !avatar.includes('http')) {
       const upgradeUrl = "https://api.dicebear.com/7.x/bottts/svg?seed=Cypher&backgroundColor=transparent";
       setAvatar(upgradeUrl);
-      localStorage.setItem("ytplay_avatar", upgradeUrl);
+      localStorage.setItem("kaevrix_avatar", upgradeUrl);
     }
   }, [avatar]);
 
@@ -211,9 +211,9 @@ export default function App() {
     setAvatar(av);
     setSelectedClass(cls);
 
-    localStorage.setItem("ytplay_username", name.trim());
-    localStorage.setItem("ytplay_avatar", av);
-    localStorage.setItem("ytplay_class", cls);
+    localStorage.setItem("kaevrix_username", name.trim());
+    localStorage.setItem("kaevrix_avatar", av);
+    localStorage.setItem("kaevrix_class", cls);
     setIsRegistered(true);
 
     const newSocket = io(BACKEND_URL || undefined);
@@ -537,8 +537,8 @@ export default function App() {
           </button>
         )}
         <div className="logo-container" onClick={resetToDashboard} style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: "10px" }}>
-          <img src="/logo.png" alt="ytPlay Logo" style={{ width: "40px", height: "40px", objectFit: "contain" }} />
-          <span className="logo-text" style={{ fontSize: "24px", fontWeight: "800", color: "var(--text-light)" }}>ytPlay</span>
+          <img src="/logo.png" alt="Kaevrix Logo" style={{ width: "40px", height: "40px", objectFit: "contain" }} />
+          <span className="logo-text" style={{ fontSize: "24px" }}>Kaevrix</span>
         </div>
       </div>
 
@@ -585,6 +585,7 @@ export default function App() {
       {/* 2. DASHBOARD OR GAME STATES */}
       {status === "idle" && (
         <Dashboard
+          isDarkMode={isDarkMode}
           curatedVideos={curatedVideos}
           selectedVideo={selectedVideo}
           setSelectedVideo={setSelectedVideo}

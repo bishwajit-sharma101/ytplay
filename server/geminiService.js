@@ -147,7 +147,7 @@ export async function generateRoadmapFromAnswers(answers) {
   const userGoal = answers[1]?.answer || "";
   const userReason = answers.find(a => a.question.toLowerCase().includes("why"))?.answer || "learning";
 
-  const prompt = `You are an expert learning path designer for the ytPlay educational gaming platform.
+  const prompt = `You are an expert learning path designer for the Kaevrix educational gaming platform.
 A user has completed an onboarding interview. Based on their answers, generate a highly personalized, detailed 3-level learning roadmap focusing EXCLUSIVELY on teaching the BASICS / FOUNDATIONS of the topic "${userTopic}" extremely well.
 
 USER INTERVIEW:
@@ -627,7 +627,7 @@ export async function generateQuizForVideo(videoId, title, duration = 300) {
   ).join("\n\n");
 
   // 2. Formulate the quiz prompt
-  const prompt = `You are an expert quiz generator for the ytPlay educational platform.
+  const prompt = `You are an expert quiz generator for the Kaevrix educational platform.
 Your task is to generate a comprehensive quiz consisting of two parts based on the content of a YouTube video:
 1. exactly 5 general multiple choice questions for the END of the video (postVideoQuestions).
 2. exactly ${numInVideoQuestions} in-video pop quiz questions (inVideoQuestions), each testing details presented in the corresponding segment transcript below.

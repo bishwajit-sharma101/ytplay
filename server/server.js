@@ -42,6 +42,6 @@ registerSocketHandlers(io);
 // Start Server
 httpServer.listen(PORT, () => {
   console.log(`========================================`);
-  console.log(` ytPlay Backend Server Running on Port ${PORT}`);
+  console.log(` Kaevrix Backend Server Running on Port ${PORT}`);
   console.log(`========================================`);
 });

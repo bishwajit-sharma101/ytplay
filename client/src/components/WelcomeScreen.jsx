@@ -109,11 +109,9 @@ export default function WelcomeScreen({ username, setUsername, avatar, setAvatar
 
       {/* Header */}
       <header style={{ padding: "40px 0 20px", textAlign: "center", position: "relative", zIndex: 10, marginTop: "20px" }}>
-        <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "10px", marginBottom: "20px" }}>
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ff6a00" strokeWidth="2.5">
-            <polygon points="5 3 19 12 5 21 5 3" fill="rgba(255,106,0,0.2)"/>
-          </svg>
-          <span style={{ fontSize: "20px", fontWeight: "800", letterSpacing: "1px", color: textColor }}>ytPlay</span>
+        <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "12px", marginBottom: "20px" }}>
+          <img src="/logo.png" alt="Kaevrix Logo" style={{ width: "36px", height: "36px", objectFit: "contain" }} />
+          <span style={{ fontSize: "24px", fontWeight: "900", letterSpacing: "2px", color: textColor, fontFamily: "var(--font-gamer)" }}>Kaevrix</span>
         </div>
         <div style={{ fontSize: "14px", fontWeight: "700", color: "#ff6a00", letterSpacing: "4px", marginBottom: "10px", textTransform: "uppercase" }}>
           Welcome To

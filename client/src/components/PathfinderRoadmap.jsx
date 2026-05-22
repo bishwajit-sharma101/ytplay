@@ -380,7 +380,7 @@ function FullscreenNotesReader({ milestone, roadmapTopic, levelColor, onClose, o
   const [genLog, setGenLog] = useState([]);
 
   // Load answers for personalization
-  const answersKey = `ytplay_roadmap_answers_${username}`;
+  const answersKey = `kaevrix_roadmap_answers_${username}`;
   const savedAnswers = localStorage.getItem(answersKey);
   const answers = savedAnswers ? JSON.parse(savedAnswers) : [];
   const userReason = answers.find(a => a.question.toLowerCase().includes("why"))?.answer || "learning";
@@ -643,7 +643,7 @@ function FullscreenNotesReader({ milestone, roadmapTopic, levelColor, onClose, o
         }}>
           <div>
             <div style={{ color: "rgba(255,255,255,0.7)", fontSize: "11px", fontWeight: "800", textTransform: "uppercase", letterSpacing: "1px" }}>
-              ytPlay Pathfinder Study Suite
+              Kaevrix Pathfinder Study Suite
             </div>
             <div style={{ color: "#ffffff", fontSize: "20px", fontWeight: "950", marginTop: "2px" }}>
               📖 {milestone.title} Notes
@@ -985,7 +985,7 @@ function MilestoneDetailPanel({ milestone, levelColor, onClose, onSearchDuel, on
 }
 
 export default function PathfinderRoadmap({ roadmap: initialRoadmap, username, onSearchDuel, onReset }) {
-  const storageKey = `ytplay_roadmap_progress_${username}`;
+  const storageKey = `kaevrix_roadmap_progress_${username}`;
 
   const [roadmap, setRoadmap] = useState(() => {
     const saved = localStorage.getItem(storageKey);

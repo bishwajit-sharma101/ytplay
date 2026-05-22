@@ -22,7 +22,7 @@
   --shadow-purple: 0 4px 12px rgba(0, 0, 0, 0.04);
   
   --font-sans: 'Inter', system-ui, sans-serif;
-  --font-gamer: 'Outfit', sans-serif;
+  --font-gamer: 'Orbitron', sans-serif;
   --font-outfit: 'Outfit', sans-serif;
 }
 
@@ -1209,7 +1209,7 @@ body {
 }
 
 /* ==========================================================================
-   ytPlay v2 Power-Up & Gamification Styles
+   Kaevrix v2 Power-Up & Gamification Styles
    ========================================================================== */
 
 /* Energy / Battery Bar UI */
