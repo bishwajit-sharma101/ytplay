@@ -10,6 +10,13 @@ import {
   generateRoadmapFromAnswers, 
   generateStudyNotes 
 } from "../geminiService.js";
+import {
+  registerUser,
+  loginUser,
+  verifyToken,
+  getUserThemeInfo,
+  getUserProfile
+} from "../services/authService.js";
 
 const router = express.Router();
 
@@ -106,6 +113,49 @@ router.post("/solo-xp", (req, res) => {
   }
 
   res.json(result);
+});
+
+// POST Auth Register
+router.post("/auth/register", (req, res) => {
+  const { username, password, avatar, selectedClass } = req.body;
+  try {
+    const result = registerUser(username, password, avatar, selectedClass);
+    res.json(result);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// POST Auth Login
+router.post("/auth/login", (req, res) => {
+  const { username, password } = req.body;
+  try {
+    const result = loginUser(username, password);
+    res.json(result);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// POST Auth Verify Token
+router.post("/auth/verify", (req, res) => {
+  const { token } = req.body;
+  if (!token) return res.status(400).json({ error: "Token required" });
+  const username = verifyToken(token);
+  if (!username) return res.status(401).json({ error: "Invalid token session" });
+  const user = getUserProfile(username);
+  if (!user) return res.status(404).json({ error: "User profile not found" });
+  res.json({ user });
+});
+
+// GET Auth Theme & Identity of Username
+router.get("/auth/theme/:username", (req, res) => {
+  const info = getUserThemeInfo(req.params.username);
+  if (info) {
+    res.json(info);
+  } else {
+    res.status(404).json({ error: "User not found" });
+  }
 });
 
 export default router;

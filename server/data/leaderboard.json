@@ -4,9 +4,9 @@
     "xp": 1775,
     "level": 9,
     "wins": 10,
-    "losses": 3,
-    "avatar": "https://api.dicebear.com/7.x/bottts/svg?seed=Cypher&backgroundColor=transparent",
-    "selectedClass": "doomscroller",
+    "losses": 4,
+    "avatar": "https://api.dicebear.com/7.x/bottts/svg?seed=Jack&backgroundColor=transparent",
+    "selectedClass": "sigmagrinder",
     "totalVideosWatched": 6,
     "totalWatchTime": 2211,
     "watchHistory": [
@@ -76,5 +76,53 @@
     "level": 1,
     "wins": 2,
     "losses": 5
+  },
+  {
+    "username": "Neo_zlv5ih",
+    "xp": 0,
+    "level": 1,
+    "wins": 0,
+    "losses": 1,
+    "avatar": "https://api.dicebear.com/7.x/bottts/svg?seed=Aneka",
+    "selectedClass": "speedrunner",
+    "totalVideosWatched": 0,
+    "totalWatchTime": 0,
+    "watchHistory": []
+  },
+  {
+    "username": "Neo_gesjt",
+    "xp": 0,
+    "level": 1,
+    "wins": 0,
+    "losses": 1,
+    "avatar": "https://api.dicebear.com/7.x/bottts/svg?seed=Aneka",
+    "selectedClass": "speedrunner",
+    "totalVideosWatched": 0,
+    "totalWatchTime": 0,
+    "watchHistory": []
+  },
+  {
+    "username": "blank121",
+    "xp": 0,
+    "level": 1,
+    "wins": 0,
+    "losses": 1,
+    "avatar": "https://api.dicebear.com/7.x/bottts/svg?seed=Felix&backgroundColor=transparent",
+    "selectedClass": "doomscroller",
+    "totalVideosWatched": 0,
+    "totalWatchTime": 0,
+    "watchHistory": []
+  },
+  {
+    "username": "blank001",
+    "xp": 0,
+    "level": 1,
+    "wins": 0,
+    "losses": 1,
+    "avatar": "https://api.dicebear.com/7.x/bottts/svg?seed=Leo&backgroundColor=transparent",
+    "selectedClass": "streamsniper",
+    "totalVideosWatched": 0,
+    "totalWatchTime": 0,
+    "watchHistory": []
   }
 ]

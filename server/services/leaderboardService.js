@@ -2,6 +2,11 @@ import fs from "fs";
 import { DATA_DIR, LEADERBOARD_FILE } from "../config/constants.js";
 
 let leaderboard = [];
+let onStatsUpdatedCallback = null;
+
+export function registerStatsCallback(cb) {
+  onStatsUpdatedCallback = cb;
+}
 
 export function loadLeaderboard() {
   // Ensure data directory exists
@@ -94,6 +99,10 @@ export function updatePlayerStats(username, xpGained, won, videoDetails = null, 
   leaderboard.sort((a, b) => b.xp - a.xp);
   saveLeaderboard();
   
+  if (onStatsUpdatedCallback) {
+    onStatsUpdatedCallback(username, xpGained, won, videoDetails, avatar, selectedClass);
+  }
+  
   return { user, leveledUp };
 }
 
@@ -117,6 +126,10 @@ export function addSoloXp(username, xpEarned, videoTitle) {
 
   leaderboard.sort((a, b) => b.xp - a.xp);
   saveLeaderboard();
+
+  if (onStatsUpdatedCallback) {
+    onStatsUpdatedCallback(username, xpEarned, null, { title: videoTitle, solo: true }, null, null);
+  }
 
   return { xp: user.xp, level: user.level, leveledUp };
 }

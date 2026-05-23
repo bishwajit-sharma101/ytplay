@@ -2,6 +2,7 @@ import path from "path";
 
 export const DATA_DIR = path.resolve("./data");
 export const LEADERBOARD_FILE = path.join(DATA_DIR, "leaderboard.json");
+export const USERS_FILE = path.join(DATA_DIR, "users.json");
 
 export const BOT_NAMES = [
   "AlphaWatch", "QuantumQuest", "BytePioneer", "CuriousBrain", 

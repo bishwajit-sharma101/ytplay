@@ -4,6 +4,7 @@ import { Server } from "socket.io";
 import cors from "cors";
 
 import { loadLeaderboard } from "./services/leaderboardService.js";
+import { loadUsers } from "./services/authService.js";
 import { init as initGameService } from "./services/gameService.js";
 import { init as initMatchmakingService } from "./services/matchmakingService.js";
 import apiRouter from "./routes/apiRoutes.js";
@@ -28,6 +29,7 @@ const io = new Server(httpServer, {
 
 // Load persistent data
 loadLeaderboard();
+loadUsers();
 
 // Initialize services with io instance
 initGameService(io);

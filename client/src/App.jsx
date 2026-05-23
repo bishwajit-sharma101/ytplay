@@ -34,6 +34,59 @@ export default function App() {
   const [wins, setWins] = useState(0);
   const [losses, setLosses] = useState(0);
   const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem("kaevrix_theme") === "dark");
+  const [token, setToken] = useState(() => localStorage.getItem("kaevrix_token") || "");
+
+  useEffect(() => {
+    const savedToken = localStorage.getItem("kaevrix_token");
+    if (savedToken) {
+      fetch(`${BACKEND_URL || ""}/api/auth/verify`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: savedToken })
+      })
+      .then(res => {
+        if (!res.ok) throw new Error("Invalid session");
+        return res.json();
+      })
+      .then(data => {
+        const { user } = data;
+        setToken(savedToken);
+        setUsername(user.username);
+        setAvatar(user.avatar);
+        setSelectedClass(user.selectedClass);
+        setXp(user.xp);
+        setLevel(user.level);
+        setWins(user.wins || 0);
+        setLosses(user.losses || 0);
+        setIsRegistered(true);
+        initializeSocketAndRegister(user.username, user.avatar, user.selectedClass);
+      })
+      .catch(err => {
+        console.warn("[Auth] Session restore failed:", err.message);
+        localStorage.removeItem("kaevrix_token");
+        setToken("");
+        setIsRegistered(false);
+      });
+    }
+  }, []);
+
+  const handleLogout = () => {
+    sound.playClockTick();
+    localStorage.removeItem("kaevrix_token");
+    setToken("");
+    setUsername("");
+    setAvatar(DEFAULT_AVATAR);
+    setSelectedClass("doomscroller");
+    setXp(0);
+    setLevel(1);
+    setWins(0);
+    setLosses(0);
+    setIsRegistered(false);
+    if (socket) {
+      socket.disconnect();
+      setSocket(null);
+    }
+  };
 
   // Powerups / V2 state
   const [energy, setEnergy] = useState(0);
@@ -492,16 +545,20 @@ export default function App() {
   if (!isRegistered) {
     return (
       <WelcomeScreen
-        username={username}
-        setUsername={setUsername}
-        avatar={avatar}
-        setAvatar={setAvatar}
-        selectedClass={selectedClass}
-        setSelectedClass={setSelectedClass}
         isDarkMode={isDarkMode}
         setIsDarkMode={setIsDarkMode}
-        onRegister={(name, av, cls) => {
-          initializeSocketAndRegister(name, av, cls);
+        onAuthSuccess={(user, userToken) => {
+          setToken(userToken);
+          localStorage.setItem("kaevrix_token", userToken);
+          setUsername(user.username);
+          setAvatar(user.avatar);
+          setSelectedClass(user.selectedClass);
+          setXp(user.xp);
+          setLevel(user.level);
+          setWins(user.wins || 0);
+          setLosses(user.losses || 0);
+          setIsRegistered(true);
+          initializeSocketAndRegister(user.username, user.avatar, user.selectedClass);
         }}
       />
     );
@@ -564,16 +621,44 @@ export default function App() {
         </button>
       </div>
 
-      <div className="header-profile" style={{ display: "flex", alignItems: "center", gap: "12px", background: "#ffffff", padding: "6px 16px 6px 6px", borderRadius: "30px", border: "1px solid #e2e8f0", boxShadow: "0 4px 6px rgba(0,0,0,0.02)" }}>
-        <div className="profile-avatar" style={{ width: "36px", height: "36px", borderRadius: "50%", background: "#f8fafc", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px", border: "1px solid #e2e8f0", overflow: "hidden" }}>
-          {avatar && avatar.includes('http') ? <img src={avatar} alt="avatar" style={{width: "100%", height: "100%", objectFit: "cover"}}/> : avatar}
-        </div>
-        <div className="profile-info" style={{ display: "flex", flexDirection: "column" }}>
-          <div className="profile-name" style={{ fontSize: "14px", fontWeight: "600", color: "var(--text-light)" }}>{username}</div>
-          <div className="profile-level-badge" style={{ fontSize: "11px", color: "var(--neon-orange)", fontWeight: "700" }}>
-            LVL {level} <span style={{ color: "var(--text-muted)", fontWeight: "normal" }}>({xp % 200}/200)</span>
+      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+        <div className="header-profile" style={{ display: "flex", alignItems: "center", gap: "12px", background: isDarkMode ? "#1e293b" : "#ffffff", padding: "6px 16px 6px 6px", borderRadius: "30px", border: "1px solid var(--glass-border)", boxShadow: "0 4px 6px rgba(0,0,0,0.02)" }}>
+          <div className="profile-avatar" style={{ width: "36px", height: "36px", borderRadius: "50%", background: isDarkMode ? "#0f172a" : "#f8fafc", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px", border: "1px solid var(--glass-border)", overflow: "hidden" }}>
+            {avatar && avatar.includes('http') ? <img src={avatar} alt="avatar" style={{width: "100%", height: "100%", objectFit: "cover"}}/> : avatar}
+          </div>
+          <div className="profile-info" style={{ display: "flex", flexDirection: "column" }}>
+            <div className="profile-name" style={{ fontSize: "14px", fontWeight: "600", color: "var(--text-light)" }}>{username}</div>
+            <div className="profile-level-badge" style={{ fontSize: "11px", color: "var(--neon-orange)", fontWeight: "700" }}>
+              LVL {level} <span style={{ color: "var(--text-muted)", fontWeight: "normal" }}>({xp % 200}/200)</span>
+            </div>
           </div>
         </div>
+
+        {/* Logout button */}
+        <button
+          onClick={handleLogout}
+          title="Sign Out"
+          style={{
+            flexShrink: 0,
+            width: "36px",
+            height: "36px",
+            borderRadius: "50%",
+            background: "rgba(239, 68, 68, 0.08)",
+            border: "1.5px solid rgba(239, 68, 68, 0.2)",
+            color: "#ef4444",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            cursor: "pointer",
+            fontSize: "14px",
+            fontWeight: "bold",
+            transition: "all 0.2s",
+          }}
+          onMouseOver={e => { e.currentTarget.style.background = "#ef4444"; e.currentTarget.style.color = "#fff"; }}
+          onMouseOut={e => { e.currentTarget.style.background = "rgba(239, 68, 68, 0.08)"; e.currentTarget.style.color = "#ef4444"; }}
+        >
+          🚪
+        </button>
       </div>
     </header>
   );
