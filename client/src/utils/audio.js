@@ -332,3 +332,256 @@ export function playCountdownBeep(count) {
     console.error("Audio error:", e);
   }
 }
+
+let bgMusicInterval = null;
+let bgMusicNodes = [];
+let isMusicPlaying = false;
+let bgGainNode = null;
+let activeProfileIdx = 0;
+const baseMusicVolume = 0.22; // Louder, clear study focus volume as requested
+
+export const MUSIC_PROFILES = [
+  { id: "lofi", name: "Lofi Study", desc: "Warm ambient pads and focus bells" },
+  { id: "cyber", name: "Cyber Horizon", desc: "Retro minor synthwave chords" },
+  { id: "zen", name: "Zen Garden", desc: "Peaceful sine drones and healing chimes" },
+  { id: "space", name: "Nebula Drone", desc: "Deep space low-frequency hum" },
+  { id: "pixel", name: "Retro Pixel", desc: "8-bit chiptune square synths" },
+  { id: "techno", name: "Chronos Focus", desc: "Calm procedural pulse beats" }
+];
+
+const PROFILE_CONFIGS = {
+  0: { // Lofi Study (A minor)
+    chords: [
+      [110.00, 220.00, 261.63, 329.63, 392.00], // Am7
+      [87.31, 174.61, 220.00, 261.63, 329.63], // Fmaj7
+      [65.41, 130.81, 196.00, 261.63, 329.63], // Cmaj7
+      [82.41, 164.81, 196.00, 246.94, 293.66]  // Em7
+    ],
+    arpNotes: [220.00, 261.63, 293.66, 329.63, 392.00, 440.00, 523.25, 587.33, 659.25, 783.99, 880.00],
+    oscType: "triangle",
+    cutoff: 350,
+    interval: 6000,
+    arpChance: 0.4,
+    arpType: "sine",
+    gainMult: 1.0
+  },
+  1: { // Cyber Horizon (D minor synthwave)
+    chords: [
+      [73.42, 146.83, 174.61, 220.00, 261.63], // Dm7
+      [58.27, 116.54, 174.61, 220.00, 293.66], // Bbmaj7
+      [65.41, 130.81, 196.00, 233.08, 329.63], // C7
+      [110.00, 220.00, 246.94, 293.66, 392.00] // Am7
+    ],
+    arpNotes: [146.83, 174.61, 196.00, 220.00, 261.63, 293.66, 349.23, 392.00, 440.00, 523.25, 587.33],
+    oscType: "sawtooth",
+    cutoff: 280,
+    interval: 5000,
+    arpChance: 0.45,
+    arpType: "triangle",
+    gainMult: 0.75 // Sawtooth is louder
+  },
+  2: { // Zen Garden (G major chimes)
+    chords: [
+      [65.41, 130.81, 196.00, 261.63, 329.63], // Cmaj7
+      [98.00, 196.00, 293.66, 392.00, 440.00], // Gsus4
+      [87.31, 174.61, 220.00, 261.63, 329.63], // Fmaj7
+      [98.00, 146.83, 220.00, 293.66, 392.00]  // G6
+    ],
+    arpNotes: [392.00, 440.00, 493.88, 587.33, 659.25, 783.99, 880.00, 987.77, 1174.66, 1318.51],
+    oscType: "sine",
+    cutoff: 400,
+    interval: 8000,
+    arpChance: 0.35,
+    arpType: "sine",
+    gainMult: 1.4 // Sine pads need higher gain
+  },
+  3: { // Nebula Drone (Deep Space lowpass)
+    chords: [
+      [82.41, 123.47, 164.81, 196.00, 293.66], // Em9
+      [65.41, 130.81, 196.00, 246.94, 329.63], // Cmaj9
+      [110.00, 165.00, 220.00, 261.63, 392.00], // Am9
+      [61.74, 123.47, 185.00, 220.00, 311.13]  // B7b9
+    ],
+    arpNotes: [82.41, 110.00, 123.47, 146.83, 164.81, 196.00, 220.00, 246.94, 293.66, 329.63],
+    oscType: "triangle",
+    cutoff: 170, // low cutoff
+    interval: 7000,
+    arpChance: 0.2, // sparse
+    arpType: "sine",
+    gainMult: 1.2
+  },
+  4: { // Retro Pixel (8-bit square synths)
+    chords: [
+      [130.81, 164.81, 196.00], // C
+      [98.00, 146.83, 196.00],  // G
+      [110.00, 130.81, 164.81], // Am
+      [87.31, 130.81, 174.61]  // F
+    ],
+    arpNotes: [261.63, 293.66, 329.63, 392.00, 440.00, 523.25, 587.33, 659.25, 783.99, 880.00],
+    oscType: "triangle",
+    cutoff: 800,
+    interval: 4000,
+    arpChance: 0.55,
+    arpType: "square",
+    gainMult: 0.45 // keep gain low for square wave
+  },
+  5: { // Chronos Focus (Ambient techno pulsing beats)
+    chords: [
+      [92.50, 185.00, 220.00, 277.18, 329.63], // F#m7
+      [73.42, 146.83, 220.00, 277.18, 369.99], // Dmaj7
+      [123.47, 246.94, 293.66, 369.99, 440.00], // Bm7
+      [69.30, 138.59, 207.65, 246.94, 329.63]  // C#m7
+    ],
+    arpNotes: [185.00, 220.00, 246.94, 277.18, 329.63, 369.99, 440.00, 493.88, 554.37, 659.25, 739.99],
+    oscType: "triangle",
+    cutoff: 280,
+    interval: 5000,
+    arpChance: 0.4,
+    arpType: "sine",
+    gainMult: 1.0
+  }
+};
+
+export function startBackgroundMusic(profileIdx = 0) {
+  try {
+    const ctx = getAudioContext();
+    
+    // If music is already playing but the profile has changed, stop and restart
+    if (isMusicPlaying) {
+      if (activeProfileIdx === profileIdx) return;
+      stopBackgroundMusic();
+    }
+    
+    isMusicPlaying = true;
+    activeProfileIdx = profileIdx;
+    
+    const cfg = PROFILE_CONFIGS[profileIdx] || PROFILE_CONFIGS[0];
+    
+    // Create master gain control for the ambient background loop
+    bgGainNode = ctx.createGain();
+    bgGainNode.gain.setValueAtTime(baseMusicVolume * cfg.gainMult, ctx.currentTime);
+    bgGainNode.connect(ctx.destination);
+    
+    let currentChordIdx = 0;
+    
+    const playChordStep = (time) => {
+      if (!isMusicPlaying) return;
+      
+      const chord = cfg.chords[currentChordIdx];
+      currentChordIdx = (currentChordIdx + 1) % cfg.chords.length;
+      
+      // Warm low-pass filter
+      const chordFilter = ctx.createBiquadFilter();
+      chordFilter.type = "lowpass";
+      chordFilter.frequency.setValueAtTime(cfg.cutoff, time);
+      chordFilter.Q.setValueAtTime(1, time);
+      chordFilter.connect(bgGainNode);
+
+      // Play soft synthesized pads
+      chord.forEach((freq) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        
+        osc.type = cfg.oscType;
+        osc.frequency.setValueAtTime(freq, time);
+        
+        const detuneAmt = (Math.random() - 0.5) * 12; // +/- 6 cents
+        osc.detune.setValueAtTime(detuneAmt, time);
+
+        // Slow attack and release envelopes proportional to interval length
+        const transitionSec = (cfg.interval / 1000) / 3;
+        gain.gain.setValueAtTime(0.001, time);
+        gain.gain.linearRampToValueAtTime(0.12 / chord.length, time + transitionSec);
+        gain.gain.setValueAtTime(0.12 / chord.length, time + (cfg.interval / 1000) - transitionSec);
+        gain.gain.exponentialRampToValueAtTime(0.001, time + (cfg.interval / 1000) + 0.5);
+        
+        osc.connect(gain);
+        gain.connect(chordFilter);
+        
+        osc.start(time);
+        osc.stop(time + (cfg.interval / 1000) + 0.8);
+        
+        bgMusicNodes.push(osc);
+      });
+
+      // Ambient chimes / clicks / pulses scheduler
+      const steps = 8;
+      const stepDuration = (cfg.interval / 1000) / steps;
+      for (let s = 0; s < steps; s++) {
+        if (Math.random() < cfg.arpChance) {
+          const arpTime = time + s * stepDuration;
+          const noteFreq = cfg.arpNotes[Math.floor(Math.random() * cfg.arpNotes.length)];
+          
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          const delay = ctx.createDelay();
+          const feedback = ctx.createGain();
+          
+          osc.type = cfg.arpType;
+          osc.frequency.setValueAtTime(noteFreq, arpTime);
+          
+          gain.gain.setValueAtTime(0.001, arpTime);
+          gain.gain.linearRampToValueAtTime(0.025, arpTime + 0.15);
+          gain.gain.exponentialRampToValueAtTime(0.001, arpTime + 1.5);
+          
+          // Delay loop parameters
+          delay.delayTime.setValueAtTime(0.35, arpTime);
+          feedback.gain.setValueAtTime(0.28, arpTime);
+          
+          osc.connect(gain);
+          gain.connect(bgGainNode);
+          
+          // Feedback Loop
+          gain.connect(delay);
+          delay.connect(feedback);
+          feedback.connect(delay);
+          delay.connect(bgGainNode);
+          
+          osc.start(arpTime);
+          osc.stop(arpTime + 2.5);
+          
+          bgMusicNodes.push(osc);
+        }
+      }
+    };
+    
+    const bufferTime = 0.15;
+    playChordStep(ctx.currentTime + bufferTime);
+    
+    bgMusicInterval = setInterval(() => {
+      if (isMusicPlaying) {
+        playChordStep(ctx.currentTime + bufferTime);
+      }
+      if (bgMusicNodes.length > 80) {
+        bgMusicNodes = bgMusicNodes.slice(-25);
+      }
+    }, cfg.interval);
+
+  } catch (e) {
+    console.error("BG Music error:", e);
+  }
+}
+
+export function stopBackgroundMusic() {
+  try {
+    isMusicPlaying = false;
+    if (bgMusicInterval) {
+      clearInterval(bgMusicInterval);
+      bgMusicInterval = null;
+    }
+    bgMusicNodes.forEach((node) => {
+      try {
+        node.stop();
+      } catch (err) {}
+    });
+    bgMusicNodes = [];
+    if (bgGainNode) {
+      bgGainNode.disconnect();
+      bgGainNode = null;
+    }
+  } catch (e) {
+    console.error("Stop BG Music error:", e);
+  }
+}
+
+

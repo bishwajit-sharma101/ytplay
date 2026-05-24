@@ -35,6 +35,10 @@ export default function App() {
   const [losses, setLosses] = useState(0);
   const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem("kaevrix_theme") === "dark");
   const [token, setToken] = useState(() => localStorage.getItem("kaevrix_token") || "");
+  const [isMusicMuted, setIsMusicMuted] = useState(() => localStorage.getItem("kaevrix_music_muted") === "true");
+  const [musicProfile, setMusicProfile] = useState(() => Number(localStorage.getItem("kaevrix_music_profile")) || 0);
+  const [keepMusicInGame, setKeepMusicInGame] = useState(() => localStorage.getItem("kaevrix_music_in_game") === "true");
+  const [showMusicSettings, setShowMusicSettings] = useState(false);
 
   useEffect(() => {
     const savedToken = localStorage.getItem("kaevrix_token");
@@ -161,6 +165,32 @@ export default function App() {
       document.body.classList.remove("dark-theme");
     }
   }, [isDarkMode]);
+
+  // Global Procedural Background Music Player Effect
+  useEffect(() => {
+    const shouldPlay = !isMusicMuted && (!isRegistered || keepMusicInGame || status === "idle");
+    
+    if (shouldPlay) {
+      const startMusicOnInteraction = () => {
+        sound.startBackgroundMusic(musicProfile);
+        document.removeEventListener("click", startMusicOnInteraction);
+        document.removeEventListener("keydown", startMusicOnInteraction);
+      };
+      
+      document.addEventListener("click", startMusicOnInteraction);
+      document.addEventListener("keydown", startMusicOnInteraction);
+      
+      sound.startBackgroundMusic(musicProfile);
+      
+      return () => {
+        document.removeEventListener("click", startMusicOnInteraction);
+        document.removeEventListener("keydown", startMusicOnInteraction);
+        sound.stopBackgroundMusic();
+      };
+    } else {
+      sound.stopBackgroundMusic();
+    }
+  }, [isMusicMuted, musicProfile, keepMusicInGame, isRegistered, status]);
 
   // Fetch lists on load
   useEffect(() => {
@@ -547,6 +577,12 @@ export default function App() {
       <WelcomeScreen
         isDarkMode={isDarkMode}
         setIsDarkMode={setIsDarkMode}
+        isMusicMuted={isMusicMuted}
+        setIsMusicMuted={setIsMusicMuted}
+        musicProfile={musicProfile}
+        setMusicProfile={setMusicProfile}
+        keepMusicInGame={keepMusicInGame}
+        setKeepMusicInGame={setKeepMusicInGame}
         onAuthSuccess={(user, userToken) => {
           setToken(userToken);
           localStorage.setItem("kaevrix_token", userToken);
@@ -619,6 +655,93 @@ export default function App() {
         >
           {isDarkMode ? "🌙" : "☀️"}
         </button>
+
+        <div style={{ position: "relative", display: "flex", gap: "8px", alignItems: "center" }}>
+          <button 
+            onClick={() => { sound.playClockTick(); setIsMusicMuted(!isMusicMuted); localStorage.setItem("kaevrix_music_muted", String(!isMusicMuted)); }}
+            style={{ flexShrink: 0, width: "40px", height: "40px", borderRadius: "50%", background: isDarkMode ? "#1e293b" : "#fff", border: "1px solid var(--neon-orange)", color: "var(--neon-orange)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: "18px", boxShadow: "0 2px 10px rgba(255,106,0,0.15)", transition: "all 0.3s ease" }}
+            title={isMusicMuted ? "Unmute Ambient Music" : "Mute Ambient Music"}
+          >
+            {isMusicMuted ? "🔇" : "🔊"}
+          </button>
+          
+          <button 
+            onClick={() => { sound.playClockTick(); setShowMusicSettings(!showMusicSettings); }}
+            style={{ flexShrink: 0, width: "40px", height: "40px", borderRadius: "50%", background: isDarkMode ? "#1e293b" : "#fff", border: "1px solid var(--neon-orange)", color: "var(--neon-orange)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: "18px", boxShadow: "0 2px 10px rgba(255,106,0,0.15)", transition: "all 0.3s ease" }}
+            title="Soundscape Console"
+          >
+            🎵
+          </button>
+
+          {showMusicSettings && (
+            <div style={{
+              position: "absolute", top: "50px", right: 0, zIndex: 10000,
+              width: "280px", background: isDarkMode ? "#1e293b" : "#ffffff",
+              border: "1px solid var(--neon-orange)", borderRadius: "16px",
+              padding: "16px", boxShadow: "0 10px 25px rgba(0,0,0,0.15)",
+              display: "flex", flexDirection: "column", gap: "12px",
+              fontFamily: "var(--font-sans)",
+              color: "var(--text-light)"
+            }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid var(--glass-border)", paddingBottom: "8px" }}>
+                <span style={{ fontFamily: "var(--font-gamer)", fontSize: "12px", fontWeight: "900", color: "var(--neon-orange)", letterSpacing: "1px" }}>SOUNDSCAPE CONSOLE</span>
+                <button 
+                  onClick={() => { sound.playClockTick(); setShowMusicSettings(false); }}
+                  style={{ background: "transparent", border: "none", color: "var(--text-muted)", cursor: "pointer", fontSize: "14px" }}
+                >
+                  ✕
+                </button>
+              </div>
+              
+              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                <span style={{ fontSize: "11px", fontWeight: "bold", color: "var(--text-muted)", letterSpacing: "0.5px" }}>SELECT STATION:</span>
+                <div style={{ display: "flex", flexDirection: "column", gap: "4px", maxHeight: "150px", overflowY: "auto", paddingRight: "4px" }}>
+                  {sound.MUSIC_PROFILES.map((p, idx) => {
+                    const isActive = musicProfile === idx;
+                    return (
+                      <button
+                        key={p.id}
+                        onClick={() => {
+                          sound.playClockTick();
+                          setMusicProfile(idx);
+                          localStorage.setItem("kaevrix_music_profile", String(idx));
+                        }}
+                        style={{
+                          textAlign: "left", padding: "8px 12px", borderRadius: "8px",
+                          background: isActive ? "var(--accent-gradient)" : "transparent",
+                          border: `1px solid ${isActive ? "transparent" : "var(--glass-border)"}`,
+                          color: isActive ? "#ffffff" : "var(--text-light)",
+                          cursor: "pointer", fontSize: "12px", transition: "all 0.2s"
+                        }}
+                      >
+                        <div style={{ fontWeight: "bold" }}>{p.name}</div>
+                        <div style={{ fontSize: "10px", opacity: isActive ? 0.9 : 0.6, marginTop: "2px" }}>{p.desc}</div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              
+              <div style={{ display: "flex", alignItems: "center", gap: "8px", borderTop: "1px solid var(--glass-border)", paddingTop: "10px", marginTop: "4px" }}>
+                <input
+                  type="checkbox"
+                  id="keepMusicInGame"
+                  checked={keepMusicInGame}
+                  onChange={(e) => {
+                    sound.playClockTick();
+                    const val = e.target.checked;
+                    setKeepMusicInGame(val);
+                    localStorage.setItem("kaevrix_music_in_game", String(val));
+                  }}
+                  style={{ cursor: "pointer", accentColor: "var(--neon-orange)" }}
+                />
+                <label htmlFor="keepMusicInGame" style={{ fontSize: "11px", fontWeight: "600", color: "var(--text-light)", cursor: "pointer" }}>
+                  Keep playing during matches
+                </label>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
