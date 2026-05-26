@@ -11,6 +11,7 @@ import Countdown from "./components/Countdown";
 import GameArena from "./components/GameArena";
 import QuizPanel from "./components/QuizPanel";
 import ResultsPanel from "./components/ResultsPanel";
+import SurpassLimits from "./components/SurpassLimits";
 
 const BACKEND_URL = window.location.hostname === "localhost" ? "http://localhost:5000" : "";
 const DEFAULT_AVATAR = "https://api.dicebear.com/7.x/bottts/svg?seed=Cypher&backgroundColor=transparent";
@@ -39,6 +40,7 @@ export default function App() {
   const [musicProfile, setMusicProfile] = useState(() => Number(localStorage.getItem("kaevrix_music_profile")) || 0);
   const [keepMusicInGame, setKeepMusicInGame] = useState(() => localStorage.getItem("kaevrix_music_in_game") === "true");
   const [showMusicSettings, setShowMusicSettings] = useState(false);
+  const [showSurpassLimits, setShowSurpassLimits] = useState(false);
 
   useEffect(() => {
     const savedToken = localStorage.getItem("kaevrix_token");
@@ -168,7 +170,7 @@ export default function App() {
 
   // Global Procedural Background Music Player Effect
   useEffect(() => {
-    const shouldPlay = !isMusicMuted && (!isRegistered || keepMusicInGame || status === "idle");
+    const shouldPlay = !isMusicMuted && (!isRegistered || keepMusicInGame || status === "idle") && !showSurpassLimits;
     
     if (shouldPlay) {
       const startMusicOnInteraction = () => {
@@ -190,7 +192,7 @@ export default function App() {
     } else {
       sound.stopBackgroundMusic();
     }
-  }, [isMusicMuted, musicProfile, keepMusicInGame, isRegistered, status]);
+  }, [isMusicMuted, musicProfile, keepMusicInGame, isRegistered, status, showSurpassLimits]);
 
   // Fetch lists on load
   useEffect(() => {
@@ -809,6 +811,7 @@ export default function App() {
           searchQuery={searchQuery}
           searchResults={searchResults}
           onSearch={(query) => { setSearchQuery(query); triggerSearch(query); }}
+          onSurpassLimits={() => setShowSurpassLimits(true)}
         />
       )}
 
@@ -900,6 +903,10 @@ export default function App() {
           leveledUp={leveledUp}
           onPlayAgain={resetToDashboard}
         />
+      )}
+
+      {showSurpassLimits && (
+        <SurpassLimits onClose={() => setShowSurpassLimits(false)} />
       )}
     </div>
   );

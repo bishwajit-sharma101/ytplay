@@ -346,7 +346,10 @@ export const MUSIC_PROFILES = [
   { id: "zen", name: "Zen Garden", desc: "Peaceful sine drones and healing chimes" },
   { id: "space", name: "Nebula Drone", desc: "Deep space low-frequency hum" },
   { id: "pixel", name: "Retro Pixel", desc: "8-bit chiptune square synths" },
-  { id: "techno", name: "Chronos Focus", desc: "Calm procedural pulse beats" }
+  { id: "techno", name: "Chronos Focus", desc: "Calm procedural pulse beats" },
+  { id: "phonk", name: "Phonk Drift", desc: "Heavy distorted bass and hype cowbells" },
+  { id: "metal", name: "Industrial Metal", desc: "Crushing drums and distorted power chords" },
+  { id: "rock", name: "Arena Rock", desc: "Stomp-clap beat and driving lead solo" }
 ];
 
 const PROFILE_CONFIGS = {
@@ -442,6 +445,233 @@ const PROFILE_CONFIGS = {
   }
 };
 
+function makeDistortionCurve(amount) {
+  const k = typeof amount === "number" ? amount : 50;
+  const n_samples = 44100;
+  const curve = new Float32Array(n_samples);
+  const deg = Math.PI / 180;
+  for (let i = 0; i < n_samples; ++i) {
+    const x = (i * 2) / n_samples - 1;
+    curve[i] = ((3 + k) * x * 20 * deg) / (Math.PI + k * Math.abs(x));
+  }
+  return curve;
+}
+
+function playSynthKick(ctx, time, outputNode) {
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  
+  osc.connect(gain);
+  gain.connect(outputNode);
+  
+  osc.type = "sine";
+  osc.frequency.setValueAtTime(150, time);
+  osc.frequency.exponentialRampToValueAtTime(45, time + 0.12);
+  
+  gain.gain.setValueAtTime(0.35, time);
+  gain.gain.exponentialRampToValueAtTime(0.001, time + 0.15);
+  
+  osc.start(time);
+  osc.stop(time + 0.18);
+  
+  bgMusicNodes.push(osc);
+}
+
+function playSynthSnare(ctx, time, outputNode) {
+  const bufferSize = ctx.sampleRate * 0.18;
+  const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let i = 0; i < bufferSize; i++) {
+    data[i] = Math.random() * 2 - 1;
+  }
+  
+  const noiseSource = ctx.createBufferSource();
+  noiseSource.buffer = buffer;
+  
+  const noiseFilter = ctx.createBiquadFilter();
+  noiseFilter.type = "bandpass";
+  noiseFilter.frequency.setValueAtTime(1000, time);
+  noiseFilter.Q.setValueAtTime(1.5, time);
+  
+  const noiseGain = ctx.createGain();
+  noiseGain.gain.setValueAtTime(0.18, time);
+  noiseGain.gain.exponentialRampToValueAtTime(0.001, time + 0.18);
+  
+  noiseSource.connect(noiseFilter);
+  noiseFilter.connect(noiseGain);
+  noiseGain.connect(outputNode);
+  
+  const osc = ctx.createOscillator();
+  const oscGain = ctx.createGain();
+  osc.type = "triangle";
+  osc.frequency.setValueAtTime(180, time);
+  osc.frequency.exponentialRampToValueAtTime(100, time + 0.1);
+  
+  oscGain.gain.setValueAtTime(0.15, time);
+  oscGain.gain.exponentialRampToValueAtTime(0.001, time + 0.1);
+  
+  osc.connect(oscGain);
+  oscGain.connect(outputNode);
+  
+  noiseSource.start(time);
+  noiseSource.stop(time + 0.2);
+  osc.start(time);
+  osc.stop(time + 0.12);
+  
+  bgMusicNodes.push(noiseSource);
+  bgMusicNodes.push(osc);
+}
+
+function playSynthHihat(ctx, time, outputNode, isOpen = false) {
+  const bufferSize = ctx.sampleRate * (isOpen ? 0.3 : 0.05);
+  const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let i = 0; i < bufferSize; i++) {
+    data[i] = Math.random() * 2 - 1;
+  }
+  
+  const noiseSource = ctx.createBufferSource();
+  noiseSource.buffer = buffer;
+  
+  const filter = ctx.createBiquadFilter();
+  filter.type = "highpass";
+  filter.frequency.setValueAtTime(8000, time);
+  
+  const gain = ctx.createGain();
+  gain.gain.setValueAtTime(0.05, time);
+  gain.gain.exponentialRampToValueAtTime(0.001, time + (isOpen ? 0.28 : 0.04));
+  
+  noiseSource.connect(filter);
+  filter.connect(gain);
+  gain.connect(outputNode);
+  
+  noiseSource.start(time);
+  noiseSource.stop(time + (isOpen ? 0.35 : 0.08));
+  
+  bgMusicNodes.push(noiseSource);
+}
+
+function playSynthCowbell(ctx, time, freq, outputNode) {
+  const osc1 = ctx.createOscillator();
+  const osc2 = ctx.createOscillator();
+  const gain = ctx.createGain();
+  const filter = ctx.createBiquadFilter();
+  
+  osc1.type = "square";
+  osc2.type = "square";
+  
+  osc1.frequency.setValueAtTime(freq, time);
+  osc2.frequency.setValueAtTime(freq * 1.48, time);
+  
+  filter.type = "bandpass";
+  filter.frequency.setValueAtTime(1200, time);
+  filter.Q.setValueAtTime(2.5, time);
+  
+  gain.gain.setValueAtTime(0.08, time);
+  gain.gain.exponentialRampToValueAtTime(0.001, time + 0.18);
+  
+  osc1.connect(filter);
+  osc2.connect(filter);
+  filter.connect(gain);
+  gain.connect(outputNode);
+  
+  osc1.start(time);
+  osc1.stop(time + 0.2);
+  osc2.start(time);
+  osc2.stop(time + 0.2);
+  
+  bgMusicNodes.push(osc1);
+  bgMusicNodes.push(osc2);
+}
+
+function playDistortedGuitar(ctx, time, freq1, freq2, duration, outputNode) {
+  const osc1 = ctx.createOscillator();
+  const osc2 = ctx.createOscillator();
+  const gain = ctx.createGain();
+  const filter = ctx.createBiquadFilter();
+  
+  osc1.type = "sawtooth";
+  osc2.type = "sawtooth";
+  
+  osc1.frequency.setValueAtTime(freq1, time);
+  osc2.frequency.setValueAtTime(freq2, time);
+  
+  filter.type = "lowpass";
+  filter.frequency.setValueAtTime(900, time);
+  filter.Q.setValueAtTime(1.5, time);
+  
+  const distNode = ctx.createWaveShaper();
+  distNode.curve = makeDistortionCurve(60);
+  distNode.oversample = "4x";
+  
+  gain.gain.setValueAtTime(0.001, time);
+  gain.gain.linearRampToValueAtTime(0.12, time + 0.02);
+  gain.gain.setValueAtTime(0.12, time + duration - 0.03);
+  gain.gain.exponentialRampToValueAtTime(0.001, time + duration);
+  
+  osc1.connect(filter);
+  osc2.connect(filter);
+  filter.connect(distNode);
+  distNode.connect(gain);
+  gain.connect(outputNode);
+  
+  osc1.start(time);
+  osc1.stop(time + duration + 0.05);
+  osc2.start(time);
+  osc2.stop(time + duration + 0.05);
+  
+  bgMusicNodes.push(osc1);
+  bgMusicNodes.push(osc2);
+}
+
+function playSoaringLead(ctx, time, freq, duration, outputNode) {
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  const filter = ctx.createBiquadFilter();
+  
+  osc.type = "sawtooth";
+  osc.frequency.setValueAtTime(freq, time);
+  
+  const vibrato = ctx.createOscillator();
+  const vibratoGain = ctx.createGain();
+  vibrato.frequency.setValueAtTime(5.8, time);
+  vibratoGain.gain.setValueAtTime(freq * 0.012, time);
+  
+  vibrato.connect(vibratoGain);
+  vibratoGain.connect(osc.frequency);
+  
+  filter.type = "lowpass";
+  filter.frequency.setValueAtTime(1300, time);
+  filter.Q.setValueAtTime(1, time);
+  
+  gain.gain.setValueAtTime(0.001, time);
+  gain.gain.linearRampToValueAtTime(0.07, time + 0.04);
+  gain.gain.setValueAtTime(0.07, time + duration - 0.04);
+  gain.gain.exponentialRampToValueAtTime(0.001, time + duration);
+  
+  const delay = ctx.createDelay();
+  const feedback = ctx.createGain();
+  delay.delayTime.setValueAtTime(0.32, time);
+  feedback.gain.setValueAtTime(0.3, time);
+  
+  osc.connect(filter);
+  filter.connect(gain);
+  gain.connect(outputNode);
+  
+  gain.connect(delay);
+  delay.connect(feedback);
+  feedback.connect(delay);
+  delay.connect(outputNode);
+  
+  vibrato.start(time);
+  vibrato.stop(time + duration + 0.1);
+  osc.start(time);
+  osc.stop(time + duration + 0.1);
+  
+  bgMusicNodes.push(osc);
+  bgMusicNodes.push(vibrato);
+}
+
 export function startBackgroundMusic(profileIdx = 0) {
   try {
     const ctx = getAudioContext();
@@ -455,6 +685,181 @@ export function startBackgroundMusic(profileIdx = 0) {
     isMusicPlaying = true;
     activeProfileIdx = profileIdx;
     
+    // For rock / phonk profiles (6, 7, 8)
+    if (profileIdx >= 6) {
+      // Create master gain control
+      bgGainNode = ctx.createGain();
+      bgGainNode.gain.setValueAtTime(baseMusicVolume * 0.9, ctx.currentTime); // keep it loud and clear but avoid clipping
+      bgGainNode.connect(ctx.destination);
+      
+      const playRockStep = (time) => {
+        if (!isMusicPlaying) return;
+        
+        if (profileIdx === 6) {
+          // --- PHONK DRIFT (BPM 125, 16 steps of 240ms, total loop = 3840ms) ---
+          const stepSize = 0.24;
+          
+          // Drums
+          const kickSteps = [0, 4, 8, 11, 12];
+          kickSteps.forEach(s => playSynthKick(ctx, time + s * stepSize, bgGainNode));
+          
+          const snareSteps = [4, 12];
+          snareSteps.forEach(s => playSynthSnare(ctx, time + s * stepSize, bgGainNode));
+          
+          for (let s = 0; s < 16; s += 2) {
+            playSynthHihat(ctx, time + s * stepSize, bgGainNode, s % 4 === 2);
+          }
+          
+          // Bassline (distorted saw bass)
+          const bassFreqs = [41.2, 49.0, 55.0, 41.2];
+          for (let s = 0; s < 16; s++) {
+            if ([0, 1, 2, 4, 5, 6, 8, 9, 10, 12, 13, 14].includes(s)) {
+              const freq = bassFreqs[Math.floor(s / 4)];
+              const osc = ctx.createOscillator();
+              const gain = ctx.createGain();
+              osc.type = "sawtooth";
+              osc.frequency.setValueAtTime(freq, time + s * stepSize);
+              
+              if (s === 11 || s === 15) {
+                osc.frequency.exponentialRampToValueAtTime(freq * 1.5, time + s * stepSize + 0.15);
+              }
+              
+              gain.gain.setValueAtTime(0.001, time + s * stepSize);
+              gain.gain.linearRampToValueAtTime(0.12, time + s * stepSize + 0.02);
+              gain.gain.exponentialRampToValueAtTime(0.001, time + s * stepSize + 0.2);
+              
+              const filter = ctx.createBiquadFilter();
+              filter.type = "lowpass";
+              filter.frequency.setValueAtTime(250, time + s * stepSize);
+              
+              osc.connect(filter);
+              filter.connect(gain);
+              gain.connect(bgGainNode);
+              
+              osc.start(time + s * stepSize);
+              osc.stop(time + s * stepSize + 0.22);
+              bgMusicNodes.push(osc);
+            }
+          }
+          
+          // Cowbell melody
+          const cowbellNotes = [
+            { step: 0, freq: 659.25 },
+            { step: 3, freq: 783.99 },
+            { step: 5, freq: 659.25 },
+            { step: 8, freq: 880.00 },
+            { step: 10, freq: 783.99 },
+            { step: 11, freq: 659.25 },
+            { step: 14, freq: 587.33 }
+          ];
+          cowbellNotes.forEach(n => {
+            playSynthCowbell(ctx, time + n.step * stepSize, n.freq, bgGainNode);
+          });
+          
+        } else if (profileIdx === 7) {
+          // --- INDUSTRIAL METAL (BPM 135, 16 steps of 222.22ms, total loop = 3555.5ms) ---
+          const stepSize = 0.2222;
+          
+          // Drums
+          for (let s = 0; s < 16; s += 2) {
+            playSynthKick(ctx, time + s * stepSize, bgGainNode);
+          }
+          
+          const snareSteps = [4, 12];
+          snareSteps.forEach(s => playSynthSnare(ctx, time + s * stepSize, bgGainNode));
+          
+          for (let s = 1; s < 16; s += 2) {
+            if (s !== 4 && s !== 12) {
+              playSynthHihat(ctx, time + s * stepSize, bgGainNode, false);
+            }
+          }
+          
+          // Heavy distorted guitar riffs
+          const guitarRiff = [
+            { step: 0, root: 73.42, fifth: 110.00, len: 1.5 },
+            { step: 2, root: 73.42, fifth: 110.00, len: 0.8 },
+            { step: 3, root: 73.42, fifth: 110.00, len: 0.8 },
+            { step: 4, root: 87.31, fifth: 130.81, len: 1.8 },
+            { step: 6, root: 87.31, fifth: 130.81, len: 0.8 },
+            { step: 7, root: 87.31, fifth: 130.81, len: 0.8 },
+            { step: 8, root: 98.00, fifth: 146.83, len: 1.8 },
+            { step: 10, root: 98.00, fifth: 146.83, len: 0.8 },
+            { step: 11, root: 98.00, fifth: 146.83, len: 0.8 },
+            { step: 12, root: 73.42, fifth: 110.00, len: 1.8 },
+            { step: 14, root: 65.41, fifth: 98.00, len: 0.8 },
+            { step: 15, root: 69.30, fifth: 103.83, len: 0.8 }
+          ];
+          guitarRiff.forEach(g => {
+            playDistortedGuitar(ctx, time + g.step * stepSize, g.root, g.fifth, g.len * stepSize, bgGainNode);
+          });
+          
+        } else if (profileIdx === 8) {
+          // --- ARENA ROCK (BPM 110, 16 steps of 272.73ms, total loop = 4363.6ms) ---
+          const stepSize = 0.2727;
+          
+          // Drums
+          const kickSteps = [0, 1, 4, 5, 8, 9, 12, 13];
+          kickSteps.forEach(s => playSynthKick(ctx, time + s * stepSize, bgGainNode));
+          
+          const snareSteps = [2, 6, 10, 14];
+          snareSteps.forEach(s => playSynthSnare(ctx, time + s * stepSize, bgGainNode));
+          
+          const openHats = [3, 7, 11, 15];
+          openHats.forEach(s => playSynthHihat(ctx, time + s * stepSize, bgGainNode, true));
+          
+          // Bassline (Driving 8th notes)
+          const bassFreqs = [82.41, 98.00, 110.00, 82.41];
+          for (let s = 0; s < 16; s++) {
+            const freq = bassFreqs[Math.floor(s / 4)];
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = "triangle";
+            osc.frequency.setValueAtTime(freq, time + s * stepSize);
+            
+            gain.gain.setValueAtTime(0.001, time + s * stepSize);
+            gain.gain.linearRampToValueAtTime(0.12, time + s * stepSize + 0.02);
+            gain.gain.exponentialRampToValueAtTime(0.001, time + s * stepSize + stepSize * 0.9);
+            
+            osc.connect(gain);
+            gain.connect(bgGainNode);
+            osc.start(time + s * stepSize);
+            osc.stop(time + s * stepSize + stepSize);
+            bgMusicNodes.push(osc);
+          }
+          
+          // Soaring Lead Solo
+          const soloNotes = [
+            { step: 0, freq: 329.63, len: 1.8 },
+            { step: 2, freq: 392.00, len: 1.8 },
+            { step: 4, freq: 440.00, len: 2.8 },
+            { step: 7, freq: 493.88, len: 0.8 },
+            { step: 8, freq: 440.00, len: 1.8 },
+            { step: 10, freq: 392.00, len: 1.8 },
+            { step: 12, freq: 329.63, len: 3.5 }
+          ];
+          soloNotes.forEach(n => {
+            playSoaringLead(ctx, time + n.step * stepSize, n.freq, n.len * stepSize, bgGainNode);
+          });
+        }
+      };
+      
+      const bufferTime = 0.15;
+      playRockStep(ctx.currentTime + bufferTime);
+      
+      const loopInterval = profileIdx === 6 ? 3840 : (profileIdx === 7 ? 3555 : 4363);
+      
+      bgMusicInterval = setInterval(() => {
+        if (isMusicPlaying) {
+          playRockStep(ctx.currentTime + bufferTime);
+        }
+        if (bgMusicNodes.length > 80) {
+          bgMusicNodes = bgMusicNodes.slice(-25);
+        }
+      }, loopInterval);
+      
+      return;
+    }
+
     const cfg = PROFILE_CONFIGS[profileIdx] || PROFILE_CONFIGS[0];
     
     // Create master gain control for the ambient background loop

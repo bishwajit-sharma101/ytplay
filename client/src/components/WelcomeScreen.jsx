@@ -75,7 +75,7 @@ export default function WelcomeScreen({
       localStorage.setItem("kaevrix_music_muted", "false");
       setMusicProfile(0);
       localStorage.setItem("kaevrix_music_profile", "0");
-    } else if (musicProfile === 5) {
+    } else if (musicProfile === sound.MUSIC_PROFILES.length - 1) {
       setIsMusicMuted(true);
       localStorage.setItem("kaevrix_music_muted", "true");
     } else {
@@ -124,6 +124,36 @@ export default function WelcomeScreen({
   }));
 
   const scrollRef = useRef(null);
+  const [carouselDir, setCarouselDir] = useState(null); // 'left' | 'right' | null
+
+  // Derive selected class index for carousel
+  const selectedClassIdx = enhancedClasses.findIndex(c => c.id === selectedClassId);
+
+  const navigateCarousel = (dir) => {
+    sound.playClockTick(true);
+    setCarouselDir(dir);
+    setTimeout(() => {
+      if (dir === 'right') {
+        const nextIdx = (selectedClassIdx + 1) % enhancedClasses.length;
+        setSelectedClassId(enhancedClasses[nextIdx].id);
+      } else {
+        const prevIdx = (selectedClassIdx - 1 + enhancedClasses.length) % enhancedClasses.length;
+        setSelectedClassId(enhancedClasses[prevIdx].id);
+      }
+      setCarouselDir(null);
+    }, 180);
+  };
+
+  // Keyboard arrow key navigation for character carousel
+  useEffect(() => {
+    if (authMode !== 'signup' || signUpStep !== 1) return;
+    const onKey = (e) => {
+      if (e.key === 'ArrowLeft') navigateCarousel('left');
+      if (e.key === 'ArrowRight') navigateCarousel('right');
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [authMode, signUpStep, selectedClassIdx]);
 
   // Debounced check to recognize username and load their profile theme on the login screen
   useEffect(() => {
@@ -596,7 +626,7 @@ export default function WelcomeScreen({
                     id: "music",
                     icon: isMusicMuted ? "🔇" : "🔊",
                     label: isMusicMuted ? "SOUNDTRACK: MUTED" : `SOUNDTRACK: ${sound.MUSIC_PROFILES[musicProfile].name.toUpperCase()}`,
-                    sub: isMusicMuted ? "Click to play Lofi Study" : `Play next: ${musicProfile === 5 ? "Muted" : sound.MUSIC_PROFILES[musicProfile + 1].name}`,
+                    sub: isMusicMuted ? "Click to play Lofi Study" : `Play next: ${musicProfile === sound.MUSIC_PROFILES.length - 1 ? "Muted" : sound.MUSIC_PROFILES[musicProfile + 1].name}`,
                     action: cycleMusicProfile
                   }
                 ].map(item => (
@@ -759,9 +789,9 @@ export default function WelcomeScreen({
               </div>
             )}
 
-            {/* ─── SIGN UP STEP 1 — SELECT CLASS ─── */}
+            {/* ─── SIGN UP STEP 1 — CHARACTER SELECT ─── */}
             {authMode === "signup" && signUpStep === 1 && (
-              <div style={{ display: "flex", flexDirection: "column", gap: "0" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "0", minHeight: "0" }}>
                 <button
                   onClick={() => { sound.playClockTick(); setAuthMode("menu"); }}
                   style={{ background: "transparent", border: "none", color: textMuted, cursor: "pointer", fontSize: "12px", fontWeight: "700", textAlign: "left", padding: "0 0 20px 0", letterSpacing: "1px" }}
@@ -769,57 +799,59 @@ export default function WelcomeScreen({
                   ← BACK
                 </button>
 
-                <div style={{ marginBottom: "22px" }}>
-                  <div style={{ fontFamily: "var(--font-gamer)", fontSize: "24px", fontWeight: "900", letterSpacing: "3px", color: textColor }}>
-                    CHOOSE CLASS
+                {/* Title */}
+                <div style={{ marginBottom: "28px" }}>
+                  <div style={{ fontFamily: "var(--font-gamer)", fontSize: "13px", fontWeight: "900", letterSpacing: "4px", color: textMuted, textTransform: "uppercase", marginBottom: "6px" }}>— Select Your Class —</div>
+                  <div style={{ fontFamily: "var(--font-gamer)", fontSize: "28px", fontWeight: "900", letterSpacing: "2px", color: textColor }}>
+                    {activeClass.name}
                   </div>
-                  <div style={{ fontSize: "12px", color: textMuted, marginTop: "4px" }}>Select your battle archetype</div>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "8px" }}>
+                    <div style={{ background: `${currentThemeColor}22`, border: `1px solid ${currentThemeColor}66`, borderRadius: "20px", padding: "4px 12px", fontSize: "11px", fontWeight: "800", color: currentThemeColor, letterSpacing: "1px", transition: "all 0.3s" }}>
+                      {selectedClassIdx + 1} / {enhancedClasses.length}
+                    </div>
+                    <div style={{ fontSize: "11px", color: textMuted, letterSpacing: "0.5px" }}>Use arrows on right →</div>
+                  </div>
                 </div>
 
-                {/* Class pill tabs */}
-                <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginBottom: "18px" }}>
-                  {enhancedClasses.map(c => {
-                    const isChosen = selectedClassId === c.id;
-                    return (
-                      <button
-                        key={c.id}
-                        onClick={() => { sound.playClockTick(); setSelectedClassId(c.id); }}
-                        style={{
-                          padding: "7px 14px", borderRadius: "20px",
-                          background: isChosen ? c.themeColor : "transparent",
-                          border: `1.5px solid ${isChosen ? c.themeColor : (isDarkMode ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)")}`,
-                          color: isChosen ? "#fff" : textMuted, fontSize: "11px", fontWeight: "800",
-                          cursor: "pointer", transition: "all 0.2s", letterSpacing: "0.5px"
-                        }}
-                      >
-                        {c.icon} {c.name.split("The ")[1] || c.name}
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {/* Active class info */}
+                {/* Description card */}
                 <div style={{
-                  background: isDarkMode ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.02)",
-                  border: `1.5px solid ${currentThemeColor}33`,
-                  borderRadius: "16px", padding: "18px", marginBottom: "20px"
+                  background: isDarkMode ? `${currentThemeColor}0a` : `${currentThemeColor}08`,
+                  border: `1.5px solid ${currentThemeColor}30`,
+                  borderRadius: "16px", padding: "20px",
+                  marginBottom: "28px", transition: "all 0.35s ease"
                 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "10px" }}>
-                    <span style={{ fontSize: "22px" }}>{activeClass.icon}</span>
-                    <div style={{ fontFamily: "var(--font-gamer)", fontSize: "16px", fontWeight: "900", color: currentThemeColor, letterSpacing: "1.5px" }}>{activeClass.name}</div>
+                  <div style={{ fontSize: "12px", color: textMuted, lineHeight: "1.7", marginBottom: "18px" }}>
+                    {activeClass.description}
                   </div>
-                  <div style={{ fontSize: "12px", color: textMuted, lineHeight: "1.6" }}>{activeClass.description}</div>
-                  <div style={{ display: "flex", gap: "16px", marginTop: "12px" }}>
-                    {[
-                      { label: "FOCUS", value: classStats.focus },
-                      { label: "SPEED", value: classStats.speed },
-                      { label: "CHAOS", value: classStats.chaos },
-                    ].map(s => (
-                      <div key={s.label} style={{ textAlign: "center" }}>
-                        <div style={{ fontSize: "16px", fontWeight: "900", color: currentThemeColor, fontFamily: "var(--font-gamer)" }}>{s.value}</div>
-                        <div style={{ fontSize: "9px", color: textMuted, fontWeight: "700", letterSpacing: "1px" }}>{s.label}</div>
+                  {/* Stat bars */}
+                  {[
+                    { label: "FOCUS", value: classStats.focus },
+                    { label: "SPEED", value: classStats.speed },
+                    { label: "CHAOS", value: classStats.chaos },
+                    { label: "DEFENSE", value: classStats.defense },
+                  ].map(s => (
+                    <div key={s.label} style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "9px" }}>
+                      <span style={{ fontSize: "10px", color: textMuted, fontWeight: "800", letterSpacing: "1.5px", minWidth: "58px" }}>{s.label}</span>
+                      <div style={{ flex: 1, height: "6px", background: isDarkMode ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.07)", borderRadius: "4px", overflow: "hidden" }}>
+                        <div style={{
+                          width: `${s.value}%`, height: "100%", borderRadius: "4px",
+                          background: `linear-gradient(90deg, ${currentThemeColor} 0%, #ff8c00 100%)`,
+                          transition: "width 0.45s cubic-bezier(0.4,0,0.2,1)",
+                          boxShadow: `0 0 8px ${currentThemeColor}66`
+                        }} />
                       </div>
-                    ))}
+                      <span style={{ fontSize: "11px", color: currentThemeColor, fontWeight: "900", minWidth: "26px", textAlign: "right", fontFamily: "var(--font-gamer)" }}>{s.value}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Unlock preview — first skill */}
+                <div style={{ marginBottom: "24px", display: "flex", alignItems: "flex-start", gap: "12px" }}>
+                  <div style={{ width: "36px", height: "36px", borderRadius: "10px", background: `${currentThemeColor}22`, border: `1px solid ${currentThemeColor}44`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px", flexShrink: 0 }}>⚡</div>
+                  <div>
+                    <div style={{ fontSize: "10px", fontWeight: "800", color: textMuted, letterSpacing: "1px", textTransform: "uppercase", marginBottom: "3px" }}>STARTER SKILL</div>
+                    <div style={{ fontSize: "13px", fontWeight: "800", color: currentThemeColor }}>{activeClass.skills[0]?.name}</div>
+                    <div style={{ fontSize: "11px", color: textMuted, marginTop: "2px", lineHeight: "1.5" }}>{activeClass.skills[0]?.desc}</div>
                   </div>
                 </div>
 
@@ -831,11 +863,12 @@ export default function WelcomeScreen({
                     color: "#fff", fontSize: "15px", fontWeight: "900", letterSpacing: "2px",
                     textTransform: "uppercase", cursor: "pointer",
                     boxShadow: `0 8px 30px ${currentThemeColor}40`, transition: "all 0.25s",
+                    width: "100%"
                   }}
-                  onMouseOver={(e) => { e.currentTarget.style.transform = "translateY(-2px)"; }}
-                  onMouseOut={(e) => { e.currentTarget.style.transform = "none"; }}
+                  onMouseOver={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = `0 14px 40px ${currentThemeColor}55`; }}
+                  onMouseOut={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = `0 8px 30px ${currentThemeColor}40`; }}
                 >
-                  ▶  CONFIRM ARCHETYPE
+                  ▶  LOCK IN — {activeClass.name.split("The ")[1] || activeClass.name}
                 </button>
 
                 <div style={{ textAlign: "center", marginTop: "14px" }}>
@@ -846,6 +879,8 @@ export default function WelcomeScreen({
                 </div>
               </div>
             )}
+
+
 
             {/* ─── SIGN UP STEP 2 — CREDENTIALS ─── */}
             {authMode === "signup" && signUpStep === 2 && (
@@ -1097,6 +1132,47 @@ export default function WelcomeScreen({
               zIndex: 2,
             }} />
 
+            {/* ── CAROUSEL NAV ARROWS (only during class select) ── */}
+            {authMode === "signup" && signUpStep === 1 && (
+              <>
+                {/* Left Arrow */}
+                <button
+                  onClick={() => navigateCarousel('left')}
+                  style={{
+                    position: "absolute", left: "16px", top: "50%", transform: "translateY(-50%)",
+                    zIndex: 10, width: "52px", height: "52px", borderRadius: "50%",
+                    background: isDarkMode ? "rgba(0,0,0,0.55)" : "rgba(255,255,255,0.65)",
+                    border: `2px solid ${currentThemeColor}88`,
+                    color: currentThemeColor, fontSize: "26px", fontWeight: "900",
+                    cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                    backdropFilter: "blur(8px)",
+                    boxShadow: `0 0 20px ${currentThemeColor}44`,
+                    transition: "all 0.2s ease",
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.background = currentThemeColor; e.currentTarget.style.color = "#fff"; e.currentTarget.style.transform = "translateY(-50%) scale(1.1)"; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = isDarkMode ? "rgba(0,0,0,0.55)" : "rgba(255,255,255,0.65)"; e.currentTarget.style.color = currentThemeColor; e.currentTarget.style.transform = "translateY(-50%) scale(1)"; }}
+                >‹</button>
+
+                {/* Right Arrow */}
+                <button
+                  onClick={() => navigateCarousel('right')}
+                  style={{
+                    position: "absolute", right: "16px", top: "50%", transform: "translateY(-50%)",
+                    zIndex: 10, width: "52px", height: "52px", borderRadius: "50%",
+                    background: isDarkMode ? "rgba(0,0,0,0.55)" : "rgba(255,255,255,0.65)",
+                    border: `2px solid ${currentThemeColor}88`,
+                    color: currentThemeColor, fontSize: "26px", fontWeight: "900",
+                    cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                    backdropFilter: "blur(8px)",
+                    boxShadow: `0 0 20px ${currentThemeColor}44`,
+                    transition: "all 0.2s ease",
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.background = currentThemeColor; e.currentTarget.style.color = "#fff"; e.currentTarget.style.transform = "translateY(-50%) scale(1.1)"; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = isDarkMode ? "rgba(0,0,0,0.55)" : "rgba(255,255,255,0.65)"; e.currentTarget.style.color = currentThemeColor; e.currentTarget.style.transform = "translateY(-50%) scale(1)"; }}
+                >›</button>
+              </>
+            )}
+
             {/* Breathing character avatar */}
             <div className="retro-breathing-character" style={{
               position: "relative",
@@ -1105,9 +1181,15 @@ export default function WelcomeScreen({
               filter: `drop-shadow(0 0 40px ${ambientGlowColor}${isDarkMode ? "bb" : "88"})`,
               transition: "filter 0.4s ease",
               marginBottom: "20px",
+              animation: authMode === "signup" && signUpStep === 1 && carouselDir
+                ? `carouselSlide${carouselDir === 'right' ? 'Out' : 'In'} 0.2s ease`
+                : undefined,
             }}>
               <img
-                src={authMode === "signin" && recognizedAvatar ? recognizedAvatar : avatar}
+                src={authMode === "signup" && signUpStep === 1
+                  ? `https://api.dicebear.com/7.x/bottts/svg?seed=${activeClass.avatarSeed || activeClass.id}&backgroundColor=transparent`
+                  : (authMode === "signin" && recognizedAvatar ? recognizedAvatar : avatar)
+                }
                 alt="Arena character"
                 className={isGlitching ? "glitch-active" : ""}
                 style={{ width: "100%", height: "100%", objectFit: "contain" }}
@@ -1133,12 +1215,31 @@ export default function WelcomeScreen({
                   letterSpacing: "2px", color: ambientGlowColor, textTransform: "uppercase"
                 }}>{activeClass.name}</span>
               </div>
-              <div style={{ fontSize: "10px", color: "#10b981", fontWeight: "800", letterSpacing: "2px", textTransform: "uppercase" }}>
-                ● SYSTEM ONLINE
-              </div>
+              {/* Dot indicators under class badge — only during Step 1 */}
+              {authMode === "signup" && signUpStep === 1 ? (
+                <div style={{ display: "flex", gap: "6px", marginTop: "4px" }}>
+                  {enhancedClasses.map((c, i) => (
+                    <button
+                      key={c.id}
+                      onClick={() => { sound.playClockTick(); setSelectedClassId(c.id); }}
+                      style={{
+                        width: i === selectedClassIdx ? "22px" : "7px", height: "7px",
+                        borderRadius: "4px", border: "none", padding: 0, cursor: "pointer",
+                        background: i === selectedClassIdx ? currentThemeColor : (isDarkMode ? "rgba(255,255,255,0.25)" : "rgba(0,0,0,0.18)"),
+                        transition: "all 0.25s ease",
+                      }}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div style={{ fontSize: "10px", color: "#10b981", fontWeight: "800", letterSpacing: "2px", textTransform: "uppercase" }}>
+                  ● SYSTEM ONLINE
+                </div>
+              )}
             </div>
 
-            {/* Stats mini display top-right corner */}
+            {/* Stats mini display top-right corner — hide during class select (shown in left panel) */}
+            {authMode !== "signup" || signUpStep !== 1 ? (
             <div style={{
               position: "absolute", top: "30px", right: "30px",
               display: "flex", flexDirection: "column", gap: "8px",
@@ -1159,6 +1260,7 @@ export default function WelcomeScreen({
                 </div>
               ))}
             </div>
+            ) : null}
 
             {/* Kaevrix watermark + tagline bottom left */}
             <div style={{
@@ -1463,69 +1565,138 @@ export default function WelcomeScreen({
                     </form>
                   )}
 
-                  {/* SIGN UP STEP 1 - SELECT ARCHETYPE */}
+                  {/* SIGN UP STEP 1 - CHARACTER SELECT */}
                   {retroShowForm && authMode === "signup" && signUpStep === 1 && (
-                    <div style={{ display: "flex", flexDirection: "column", gap: "15px", justifyContent: "center" }}>
-                      
-                      <div style={{ fontSize: "11px", color: textMuted, fontWeight: "900", letterSpacing: "3px", textTransform: "uppercase", marginBottom: "5px" }}>
-                        ▶ SELECT CLASS ARCHETYPE
+                    <div style={{ display: "flex", flexDirection: "column", gap: "12px", justifyContent: "center" }}>
+
+                      <div style={{ fontSize: "11px", color: textMuted, fontWeight: "900", letterSpacing: "3px", textTransform: "uppercase", marginBottom: "2px" }}>
+                        ▶ SELECT CLASS ARCHETYPE · {selectedClassIdx + 1} / {enhancedClasses.length}
                       </div>
 
-                      {/* Dropdown list styled like classic RPG list */}
-                      <div style={{ display: "flex", flexDirection: "column", gap: "8px", maxHeight: "150px", overflowY: "auto", paddingRight: "6px" }}>
-                        {enhancedClasses.map(c => {
-                          const isChosen = selectedClassId === c.id;
-                          return (
-                            <button
-                              key={c.id}
-                              onClick={() => { sound.playClockTick(); setSelectedClassId(c.id); }}
-                              style={{
-                                textAlign: "left", background: isChosen ? `${c.themeColor}22` : "transparent",
-                                border: `2px solid ${isChosen ? c.themeColor : "transparent"}`,
-                                borderRadius: "8px",
-                                color: isChosen ? c.themeColor : textColor,
-                                fontFamily: "var(--font-gamer)", fontSize: "13px", fontWeight: "900",
-                                cursor: "pointer", padding: "8px 16px", letterSpacing: "1.5px"
-                              }}
-                            >
-                              {isChosen ? `▶ ${c.name.toUpperCase()}` : `  ${c.name.toUpperCase()}`}
-                            </button>
-                          );
-                        })}
+                      {/* Retro Carousel Row */}
+                      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                        {/* Left Arrow */}
+                        <button
+                          onClick={() => navigateCarousel('left')}
+                          style={{
+                            width: "48px", height: "56px", flexShrink: 0, borderRadius: "6px",
+                            background: `${currentThemeColor}18`,
+                            border: `2px solid ${currentThemeColor}88`,
+                            color: currentThemeColor, fontSize: "22px", fontWeight: "900",
+                            cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                            fontFamily: "var(--font-gamer)",
+                            transition: "all 0.15s",
+                            boxShadow: `0 0 10px ${currentThemeColor}33`
+                          }}
+                          onMouseEnter={e => { e.currentTarget.style.background = currentThemeColor; e.currentTarget.style.color = "#000"; }}
+                          onMouseLeave={e => { e.currentTarget.style.background = `${currentThemeColor}18`; e.currentTarget.style.color = currentThemeColor; }}
+                        >◄</button>
+
+                        {/* Center Character */}
+                        <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center" }}>
+                          <div style={{
+                            width: "100px", height: "100px", borderRadius: "8px",
+                            border: `3px solid ${currentThemeColor}`,
+                            background: isDarkMode ? "rgba(0,0,0,0.6)" : "rgba(255,255,255,0.6)",
+                            display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden",
+                            boxShadow: `0 0 25px ${currentThemeColor}66, inset 0 0 15px ${currentThemeColor}11`,
+                            animation: carouselDir ? `carouselSlide${carouselDir === 'right' ? 'Out' : 'In'} 0.18s ease` : "retroCharPulse 2s ease-in-out infinite",
+                            transition: "border-color 0.2s, box-shadow 0.2s",
+                          }}>
+                            <img
+                              src={`https://api.dicebear.com/7.x/bottts/svg?seed=${activeClass.avatarSeed || activeClass.id}&backgroundColor=transparent`}
+                              alt={activeClass.name}
+                              style={{ width: "85%", height: "85%", objectFit: "contain" }}
+                            />
+                          </div>
+                          <div style={{
+                            fontFamily: "var(--font-gamer)", fontSize: "14px", fontWeight: "900",
+                            color: currentThemeColor, letterSpacing: "2px", marginTop: "8px",
+                            textShadow: `0 0 8px ${currentThemeColor}88`,
+                            transition: "color 0.2s"
+                          }}>
+                            {activeClass.name.toUpperCase()}
+                          </div>
+                          <div style={{ fontSize: "10px", color: textMuted, textAlign: "center", maxWidth: "180px", lineHeight: "1.4", marginTop: "4px", fontFamily: "var(--font-gamer)" }}>
+                            {activeClass.description}
+                          </div>
+                        </div>
+
+                        {/* Right Arrow */}
+                        <button
+                          onClick={() => navigateCarousel('right')}
+                          style={{
+                            width: "48px", height: "56px", flexShrink: 0, borderRadius: "6px",
+                            background: `${currentThemeColor}18`,
+                            border: `2px solid ${currentThemeColor}88`,
+                            color: currentThemeColor, fontSize: "22px", fontWeight: "900",
+                            cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                            fontFamily: "var(--font-gamer)",
+                            transition: "all 0.15s",
+                            boxShadow: `0 0 10px ${currentThemeColor}33`
+                          }}
+                          onMouseEnter={e => { e.currentTarget.style.background = currentThemeColor; e.currentTarget.style.color = "#000"; }}
+                          onMouseLeave={e => { e.currentTarget.style.background = `${currentThemeColor}18`; e.currentTarget.style.color = currentThemeColor; }}
+                        >►</button>
                       </div>
 
-                      {/* Attribute stats preview inside RPG overlay */}
-                      <div style={{ 
-                        background: isDarkMode ? "rgba(0,0,0,0.45)" : "rgba(255,255,255,0.6)", 
-                        border: `2px solid ${currentThemeColor}44`, 
-                        borderRadius: "10px", 
-                        padding: "16px",
-                        transition: "background 0.4s"
+                      {/* Dot Indicators */}
+                      <div style={{ display: "flex", justifyContent: "center", gap: "5px" }}>
+                        {enhancedClasses.map((c, i) => (
+                          <button
+                            key={c.id}
+                            onClick={() => { sound.playClockTick(); setSelectedClassId(c.id); }}
+                            style={{
+                              width: i === selectedClassIdx ? "18px" : "6px", height: "6px",
+                              borderRadius: "3px", border: "none", padding: 0, cursor: "pointer",
+                              background: i === selectedClassIdx ? currentThemeColor : `${currentThemeColor}44`,
+                              transition: "all 0.25s ease",
+                            }}
+                          />
+                        ))}
+                      </div>
+
+                      {/* Stats Bars */}
+                      <div style={{
+                        background: isDarkMode ? "rgba(0,0,0,0.45)" : "rgba(255,255,255,0.6)",
+                        border: `2px solid ${currentThemeColor}44`,
+                        borderRadius: "8px", padding: "12px 14px",
+                        transition: "border-color 0.2s"
                       }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12px", color: currentThemeColor, fontWeight: "900", fontFamily: "var(--font-gamer)", marginBottom: "8px" }}>
-                          <span>FOCUS: {classStats.focus}%</span>
-                          <span>SPEED: {classStats.speed}%</span>
-                          <span>CHAOS: {classStats.chaos}%</span>
-                        </div>
-                        <div style={{ fontSize: "12px", color: textMuted, lineHeight: "1.5", fontFamily: "var(--font-gamer)" }}>
-                          {activeClass.description}
-                        </div>
+                        {[
+                          { label: "FOCUS", value: classStats.focus },
+                          { label: "SPEED", value: classStats.speed },
+                          { label: "CHAOS", value: classStats.chaos },
+                          { label: "DEFENSE", value: classStats.defense },
+                        ].map(s => (
+                          <div key={s.label} style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "5px" }}>
+                            <span style={{ fontSize: "9px", color: currentThemeColor, fontWeight: "900", letterSpacing: "1px", minWidth: "48px", fontFamily: "var(--font-gamer)" }}>{s.label}</span>
+                            <div style={{ flex: 1, height: "4px", background: isDarkMode ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)", borderRadius: "2px", overflow: "hidden" }}>
+                              <div style={{
+                                width: `${s.value}%`, height: "100%",
+                                background: `linear-gradient(90deg, ${currentThemeColor} 0%, #ff8c00 100%)`,
+                                transition: "width 0.4s ease"
+                              }} />
+                            </div>
+                            <span style={{ fontSize: "9px", color: currentThemeColor, fontWeight: "900", minWidth: "24px", textAlign: "right", fontFamily: "var(--font-gamer)" }}>{s.value}</span>
+                          </div>
+                        ))}
                       </div>
 
-                      <div style={{ display: "flex", gap: "10px", marginTop: "5px" }}>
+                      <div style={{ display: "flex", gap: "10px", marginTop: "2px" }}>
                         <button
                           onClick={() => { sound.playClockTick(); setSignUpStep(2); }}
                           style={{
                             flex: 1, background: `linear-gradient(90deg, ${currentThemeColor} 0%, #ff8c00 100%)`, border: `2px solid ${textColor}`,
                             borderRadius: "10px", color: "#fff", fontFamily: "var(--font-gamer)",
-                            fontSize: "14px", fontWeight: "900", padding: "16px 20px", cursor: "pointer", letterSpacing: "2.5px"
+                            fontSize: "13px", fontWeight: "900", padding: "14px 20px", cursor: "pointer", letterSpacing: "2px"
                           }}
                         >
-                          [ CONFIRM CLASS ARCHETYPE ]
+                          [ CONFIRM: {activeClass.name.split("The ")[1] || activeClass.name} ]
                         </button>
                       </div>
 
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "5px" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "2px" }}>
                         <button
                           onClick={() => { sound.playClockTick(); setAuthMode("signin"); setRetroShowForm(true); }}
                           style={{
@@ -1549,6 +1720,7 @@ export default function WelcomeScreen({
 
                     </div>
                   )}
+
 
                   {/* SIGN UP STEP 2 - DEFINE IDENTIFIER */}
                   {retroShowForm && authMode === "signup" && signUpStep === 2 && (

@@ -2392,6 +2392,26 @@ body {
     linear-gradient(90deg, rgba(255, 106, 0, 0.04) 1px, transparent 1px);
 }
 
+/* Character Carousel Slide Animations */
+@keyframes carouselSlideOut {
+  0%   { opacity: 1; transform: scale(1) translateX(0); }
+  100% { opacity: 0; transform: scale(0.82) translateX(-24px); }
+}
+@keyframes carouselSlideIn {
+  0%   { opacity: 0; transform: scale(0.82) translateX(24px); }
+  100% { opacity: 1; transform: scale(1) translateX(0); }
+}
+@keyframes charFloat {
+  0%   { transform: translateY(0px) scale(1); }
+  50%  { transform: translateY(-8px) scale(1.03); }
+  100% { transform: translateY(0px) scale(1); }
+}
+@keyframes retroCharPulse {
+  0%   { box-shadow: 0 0 20px currentcolor; transform: scale(1); }
+  50%  { box-shadow: 0 0 35px currentcolor; transform: scale(1.02); }
+  100% { box-shadow: 0 0 20px currentcolor; transform: scale(1); }
+}
+
 /* Glowing Orbital Ring */
 @keyframes portalOrbitalSpin {
   0% { transform: rotate(0deg); }
@@ -2630,4 +2650,228 @@ body {
   width: 1px;
   background: linear-gradient(to bottom, transparent, rgba(255, 106, 0, 0.15) 30%, rgba(255, 106, 0, 0.15) 70%, transparent);
   pointer-events: none;
+}
+
+/* ==========================================================================
+   Surpass Limits Cinematic Overlay Styles
+   ========================================================================== */
+
+/* Fullscreen black container */
+.surpass-limits-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: #000000;
+  z-index: 99999;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  color: #ffffff;
+  user-select: none;
+}
+
+/* Red/orange pulsing ambient vignette */
+.cinematic-vignette {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 10;
+  box-shadow: inset 0 0 100px rgba(239, 68, 68, 0.2);
+  animation: pulseVignette 4s ease-in-out infinite;
+}
+
+@keyframes pulseVignette {
+  0%, 100% {
+    box-shadow: inset 0 0 100px rgba(239, 68, 68, 0.2);
+  }
+  50% {
+    box-shadow: inset 0 0 180px rgba(239, 68, 68, 0.45);
+  }
+}
+
+/* Top & Bottom Cinema Letterbox Bars */
+.cinema-bar-top, .cinema-bar-bottom {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 10vh;
+  background: #000000;
+  z-index: 20;
+  box-shadow: 0 0 30px rgba(0,0,0,0.9);
+  transition: transform 1.5s cubic-bezier(0.19, 1, 0.22, 1);
+}
+
+.cinema-bar-top {
+  top: 0;
+  transform: translateY(-100%);
+}
+
+.cinema-bar-bottom {
+  bottom: 0;
+  transform: translateY(100%);
+}
+
+/* Active state for cinema bars */
+.surpass-limits-overlay.active .cinema-bar-top {
+  transform: translateY(0);
+}
+
+.surpass-limits-overlay.active .cinema-bar-bottom {
+  transform: translateY(0);
+}
+
+/* Cinematic text animations */
+.cinematic-text-container {
+  max-width: 80%;
+  text-align: center;
+  z-index: 15;
+}
+
+.cinematic-text {
+  font-family: 'Outfit', 'Inter', sans-serif;
+  font-weight: 900;
+  font-size: clamp(32px, 5.5vw, 76px);
+  line-height: 1.2;
+  letter-spacing: 6px;
+  text-transform: uppercase;
+  color: #ffffff;
+  /* Cinematic title dropshadow */
+  text-shadow: 0 0 20px rgba(255, 255, 255, 0.3), 0 10px 40px rgba(0,0,0,0.8);
+  opacity: 0;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 90%;
+  will-change: transform, opacity, letter-spacing;
+}
+
+/* This class gets applied to trigger the animation */
+.cinematic-text.animate-text {
+  animation: cinematicFadeIn 3.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Slow, dramatic zoom-in + letter-spacing expansion */
+@keyframes cinematicFadeIn {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.9);
+    letter-spacing: 4px;
+    filter: blur(8px);
+  }
+  15% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+    letter-spacing: 12px;
+    filter: blur(0);
+  }
+  85% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.06);
+    letter-spacing: 15px;
+    filter: blur(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1.15);
+    letter-spacing: 18px;
+    filter: blur(4px);
+  }
+}
+
+/* Subtle film grain noise overlay */
+.cinematic-grain {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: radial-gradient(rgba(255,255,255,0.015) 1px, transparent 0);
+  background-size: 8px 8px;
+  z-index: 12;
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+/* Exit button */
+.cinematic-exit-btn {
+  position: absolute;
+  top: 40px;
+  right: 40px;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.6);
+  padding: 10px 20px;
+  font-family: var(--font-gamer);
+  font-size: 13px;
+  letter-spacing: 2px;
+  border-radius: 8px;
+  cursor: pointer;
+  z-index: 100;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(5px);
+}
+
+.cinematic-exit-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  border-color: #ef4444;
+  box-shadow: 0 0 15px rgba(239, 68, 68, 0.3);
+  text-shadow: 0 0 5px rgba(239, 68, 68, 0.5);
+  transform: translateY(-1px);
+}
+
+/* Limit breaker profile button */
+.btn-surpass-limits {
+  background: linear-gradient(135deg, #090000 0%, #170000 100%);
+  border: 1.5px solid #ef4444;
+  color: #ef4444 !important;
+  text-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.15), inset 0 0 8px rgba(239, 68, 68, 0.05);
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-family: var(--font-gamer);
+  font-weight: 900;
+  font-size: 13px;
+  letter-spacing: 2.5px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 15px;
+  text-transform: uppercase;
+  position: relative;
+  overflow: hidden;
+  animation: buttonRedPulse 2s infinite alternate;
+}
+
+@keyframes buttonRedPulse {
+  0% {
+    box-shadow: 0 0 10px rgba(239, 68, 68, 0.15), inset 0 0 5px rgba(239, 68, 68, 0.05);
+  }
+  100% {
+    box-shadow: 0 0 18px rgba(239, 68, 68, 0.35), inset 0 0 10px rgba(239, 68, 68, 0.15);
+    border-color: #f97316;
+  }
+}
+
+.btn-surpass-limits:hover {
+  background: linear-gradient(135deg, #1c0000 0%, #300000 100%);
+  color: #ffffff !important;
+  border-color: #f97316;
+  text-shadow: 0 0 12px rgba(249, 115, 22, 0.85);
+  box-shadow: 0 0 25px rgba(249, 115, 22, 0.45), inset 0 0 12px rgba(249, 115, 22, 0.15);
+  transform: translateY(-2px) scale(1.02);
+}
+
+.btn-surpass-limits:active {
+  transform: translateY(0) scale(0.98);
 }

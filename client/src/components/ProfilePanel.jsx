@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { CHARACTER_CLASSES, getUnlockedSkills } from "../utils/characterClasses";
 import * as sound from "../utils/audio";
 
-export default function ProfilePanel({ username, selectedClass }) {
+export default function ProfilePanel({ username, selectedClass, onSurpassLimits }) {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -53,9 +53,19 @@ export default function ProfilePanel({ username, selectedClass }) {
                 <span style={{ color: "var(--neon-blue)", fontWeight: "bold" }}>LEVEL {level}</span>
                 <span style={{ color: "var(--text-muted)" }}>{xp % 200} / 200 XP</span>
               </div>
-              <div style={{ width: "100%", height: "8px", background: "rgba(255,255,255,0.1)", borderRadius: "4px", overflow: "hidden" }}>
+              <div style={{ width: "100%", height: "8px", background: "rgba(255,255,255,0.1)", borderRadius: "4px", overflow: "hidden", marginBottom: "12px" }}>
                 <div style={{ width: `${Math.min(100, xpProgress)}%`, height: "100%", background: "linear-gradient(90deg, var(--neon-blue), var(--neon-pink))" }} />
               </div>
+              <button
+                className="btn-surpass-limits"
+                onClick={() => {
+                  sound.playClockTick();
+                  if (onSurpassLimits) onSurpassLimits();
+                }}
+                style={{ width: "100%" }}
+              >
+                ⚡ SURPASS LIMITS ⚡
+              </button>
             </div>
           </div>
         </div>
