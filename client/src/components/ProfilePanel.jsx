@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { CHARACTER_CLASSES, getUnlockedSkills } from "../utils/characterClasses";
 import * as sound from "../utils/audio";
 
-export default function ProfilePanel({ username, selectedClass, onSurpassLimits }) {
+export default function ProfilePanel({ username, selectedClass, onSurpassLimits, onTestJourneyDay }) {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -66,6 +66,39 @@ export default function ProfilePanel({ username, selectedClass, onSurpassLimits 
               >
                 ⚡ SURPASS LIMITS ⚡
               </button>
+
+              {/* Dev Test Buttons */}
+              {window.location.hostname === "localhost" && (
+                <div style={{ marginTop: "12px", borderTop: "1px dashed rgba(255,255,255,0.1)", paddingTop: "12px" }}>
+                  <div style={{ fontSize: "10px", color: "var(--text-muted)", marginBottom: "6px", fontWeight: "bold", letterSpacing: "1px" }}>🛠️ DEV: TEST ANNOUNCEMENTS</div>
+                  <div style={{ display: "flex", gap: "6px" }}>
+                    <button
+                      onClick={() => { sound.playClockTick(); if (onTestJourneyDay) onTestJourneyDay(1); }}
+                      style={{ flex: 1, padding: "6px", background: "rgba(212, 175, 55, 0.1)", border: "1px solid rgba(212, 175, 55, 0.3)", borderRadius: "4px", color: "#d4af37", fontSize: "10px", fontWeight: "bold", cursor: "pointer", transition: "all 0.2s" }}
+                    >
+                      DAY 1
+                    </button>
+                    <button
+                      onClick={() => { sound.playClockTick(); if (onTestJourneyDay) onTestJourneyDay(2); }}
+                      style={{ flex: 1, padding: "6px", background: "rgba(212, 175, 55, 0.1)", border: "1px solid rgba(212, 175, 55, 0.3)", borderRadius: "4px", color: "#d4af37", fontSize: "10px", fontWeight: "bold", cursor: "pointer", transition: "all 0.2s" }}
+                    >
+                      DAY 2
+                    </button>
+                    <button
+                      onClick={() => { sound.playClockTick(); if (onTestJourneyDay) onTestJourneyDay(3); }}
+                      style={{ flex: 1, padding: "6px", background: "rgba(212, 175, 55, 0.1)", border: "1px solid rgba(212, 175, 55, 0.3)", borderRadius: "4px", color: "#d4af37", fontSize: "10px", fontWeight: "bold", cursor: "pointer", transition: "all 0.2s" }}
+                    >
+                      DAY 3
+                    </button>
+                    <button
+                      onClick={() => { sound.playClockTick(); if (onTestJourneyDay) onTestJourneyDay(7); }}
+                      style={{ flex: 1, padding: "6px", background: "rgba(212, 175, 55, 0.15)", border: "1px solid #d4af37", borderRadius: "4px", color: "#f7ebd0", fontSize: "10px", fontWeight: "bold", cursor: "pointer", transition: "all 0.2s" }}
+                    >
+                      DAY 7
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

@@ -78,6 +78,18 @@
     "losses": 5
   },
   {
+    "username": "blank001",
+    "xp": 50,
+    "level": 1,
+    "wins": 0,
+    "losses": 1,
+    "avatar": "https://api.dicebear.com/7.x/bottts/svg?seed=Leo&backgroundColor=transparent",
+    "selectedClass": "streamsniper",
+    "totalVideosWatched": 0,
+    "totalWatchTime": 0,
+    "watchHistory": []
+  },
+  {
     "username": "Neo_zlv5ih",
     "xp": 0,
     "level": 1,
@@ -109,18 +121,6 @@
     "losses": 1,
     "avatar": "https://api.dicebear.com/7.x/bottts/svg?seed=Felix&backgroundColor=transparent",
     "selectedClass": "doomscroller",
-    "totalVideosWatched": 0,
-    "totalWatchTime": 0,
-    "watchHistory": []
-  },
-  {
-    "username": "blank001",
-    "xp": 0,
-    "level": 1,
-    "wins": 0,
-    "losses": 1,
-    "avatar": "https://api.dicebear.com/7.x/bottts/svg?seed=Leo&backgroundColor=transparent",
-    "selectedClass": "streamsniper",
     "totalVideosWatched": 0,
     "totalWatchTime": 0,
     "watchHistory": []

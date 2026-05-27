@@ -60,6 +60,28 @@ export function hashPassword(password, salt) {
   return crypto.pbkdf2Sync(password, salt, 1000, 64, "sha512").toString("hex");
 }
 
+function checkJourneyDay(user) {
+  if (!user.createdAt) {
+    user.createdAt = new Date().toISOString();
+  }
+  if (user.lastSeenDay === undefined) {
+    user.lastSeenDay = 0;
+  }
+
+  const createdAt = new Date(user.createdAt);
+  const now = new Date();
+  const diffMs = now - createdAt;
+  const currentDay = Math.floor(diffMs / (1000 * 60 * 60 * 24)) + 1;
+
+  if (currentDay > user.lastSeenDay) {
+    user.lastSeenDay = currentDay;
+    saveUsers();
+    return currentDay;
+  }
+
+  return null;
+}
+
 export function registerUser(username, password, avatar, selectedClass) {
   const normalized = username.trim();
   if (!normalized) {
@@ -90,7 +112,8 @@ export function registerUser(username, password, avatar, selectedClass) {
     totalVideosWatched: 0,
     totalWatchTime: 0,
     watchHistory: [],
-    createdAt: new Date().toISOString()
+    createdAt: new Date().toISOString(),
+    lastSeenDay: 1
   };
 
   users.push(newUser);
@@ -100,7 +123,9 @@ export function registerUser(username, password, avatar, selectedClass) {
   updatePlayerStats(normalized, 0, false, null, avatar, selectedClass);
 
   const token = generateToken(normalized);
-  return { user: sanitizeUser(newUser), token };
+  const sanitized = sanitizeUser(newUser);
+  sanitized.showDailyAnnouncement = 1;
+  return { user: sanitized, token };
 }
 
 export function loginUser(username, password) {
@@ -115,8 +140,14 @@ export function loginUser(username, password) {
     throw new Error("Invalid tag or passkey");
   }
 
+  const currentDay = checkJourneyDay(user);
+
   const token = generateToken(user.username);
-  return { user: sanitizeUser(user), token };
+  const sanitized = sanitizeUser(user);
+  if (currentDay) {
+    sanitized.showDailyAnnouncement = currentDay;
+  }
+  return { user: sanitized, token };
 }
 
 export function getUserThemeInfo(username) {
@@ -136,7 +167,12 @@ export function getUserProfile(username) {
   const normalized = username.trim();
   const user = users.find(u => u.username.toLowerCase() === normalized.toLowerCase());
   if (user) {
-    return sanitizeUser(user);
+    const currentDay = checkJourneyDay(user);
+    const sanitized = sanitizeUser(user);
+    if (currentDay) {
+      sanitized.showDailyAnnouncement = currentDay;
+    }
+    return sanitized;
   }
   return null;
 }

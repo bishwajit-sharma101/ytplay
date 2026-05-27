@@ -65,13 +65,23 @@
     "passwordHash": "ed5cea72b0534da2ed02fa04272b4d9e201c78fdee13e21d31ed2fff355b0949f65fd265ba85f8b8a8e7cf0086b3cd7392442d3c758840bc7b167d16ced580c5",
     "avatar": "https://api.dicebear.com/7.x/bottts/svg?seed=Leo&backgroundColor=transparent",
     "selectedClass": "streamsniper",
-    "xp": 0,
+    "xp": 50,
     "level": 1,
     "wins": 0,
     "losses": 1,
-    "totalVideosWatched": 0,
+    "totalVideosWatched": 1,
     "totalWatchTime": 0,
-    "watchHistory": [],
-    "createdAt": "2026-05-23T19:24:48.604Z"
+    "watchHistory": [
+      {
+        "title": null,
+        "timestamp": "2026-05-27T09:27:26.395Z",
+        "solo": true
+      }
+    ],
+    "createdAt": "2026-05-23T19:24:48.604Z",
+    "lastLogin": "2026-05-27T09:27:26.392Z",
+    "loginStreak": 1,
+    "dailyRewardXp": 50,
+    "lastSeenDay": 4
   }
 ]

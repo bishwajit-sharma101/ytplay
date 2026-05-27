@@ -35,7 +35,8 @@ export default function Dashboard({
   searchResults,
   onSearch,
   selectedClass,
-  onSurpassLimits
+  onSurpassLimits,
+  onTestJourneyDay
 }) {
   const [activeTab, setActiveTab] = useState("duels");
 
@@ -115,7 +116,7 @@ export default function Dashboard({
       {/* Content Area */}
       <div style={{ flex: 1, minWidth: 0 }}>
         {activeTab === "profile" && (
-          <ProfilePanel username={username} selectedClass={selectedClass} onSurpassLimits={onSurpassLimits} />
+          <ProfilePanel username={username} selectedClass={selectedClass} onSurpassLimits={onSurpassLimits} onTestJourneyDay={onTestJourneyDay} />
         )}
 
         {activeTab === "duels" && (

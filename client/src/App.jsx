@@ -12,6 +12,7 @@ import GameArena from "./components/GameArena";
 import QuizPanel from "./components/QuizPanel";
 import ResultsPanel from "./components/ResultsPanel";
 import SurpassLimits from "./components/SurpassLimits";
+import DailyLogin from "./components/DailyLogin";
 
 const BACKEND_URL = window.location.hostname === "localhost" ? "http://localhost:5000" : "";
 const DEFAULT_AVATAR = "https://api.dicebear.com/7.x/bottts/svg?seed=Cypher&backgroundColor=transparent";
@@ -41,6 +42,8 @@ export default function App() {
   const [keepMusicInGame, setKeepMusicInGame] = useState(() => localStorage.getItem("kaevrix_music_in_game") === "true");
   const [showMusicSettings, setShowMusicSettings] = useState(false);
   const [showSurpassLimits, setShowSurpassLimits] = useState(false);
+  const [showDailyModal, setShowDailyModal] = useState(false);
+  const [journeyDay, setJourneyDay] = useState(1);
 
   useEffect(() => {
     const savedToken = localStorage.getItem("kaevrix_token");
@@ -64,6 +67,10 @@ export default function App() {
         setLevel(user.level);
         setWins(user.wins || 0);
         setLosses(user.losses || 0);
+        if (user.showDailyAnnouncement) {
+          setJourneyDay(user.showDailyAnnouncement);
+          setShowDailyModal(true);
+        }
         setIsRegistered(true);
         initializeSocketAndRegister(user.username, user.avatar, user.selectedClass);
       })
@@ -595,6 +602,10 @@ export default function App() {
           setLevel(user.level);
           setWins(user.wins || 0);
           setLosses(user.losses || 0);
+          if (user.showDailyAnnouncement) {
+            setJourneyDay(user.showDailyAnnouncement);
+            setShowDailyModal(true);
+          }
           setIsRegistered(true);
           initializeSocketAndRegister(user.username, user.avatar, user.selectedClass);
         }}
@@ -812,6 +823,10 @@ export default function App() {
           searchResults={searchResults}
           onSearch={(query) => { setSearchQuery(query); triggerSearch(query); }}
           onSurpassLimits={() => setShowSurpassLimits(true)}
+          onTestJourneyDay={(dayNum) => {
+            setJourneyDay(dayNum);
+            setShowDailyModal(true);
+          }}
         />
       )}
 
@@ -907,6 +922,17 @@ export default function App() {
 
       {showSurpassLimits && (
         <SurpassLimits onClose={() => setShowSurpassLimits(false)} />
+      )}
+
+      {showDailyModal && (
+        <DailyLogin 
+          day={journeyDay} 
+          xp={xp}
+          level={level}
+          wins={wins}
+          losses={losses}
+          onClose={() => setShowDailyModal(false)} 
+        />
       )}
     </div>
   );
