@@ -79,15 +79,39 @@
   },
   {
     "username": "blank001",
-    "xp": 50,
-    "level": 1,
-    "wins": 0,
+    "xp": 200,
+    "level": 2,
+    "wins": 1,
     "losses": 1,
     "avatar": "https://api.dicebear.com/7.x/bottts/svg?seed=Leo&backgroundColor=transparent",
     "selectedClass": "streamsniper",
-    "totalVideosWatched": 0,
-    "totalWatchTime": 0,
-    "watchHistory": []
+    "totalVideosWatched": 1,
+    "totalWatchTime": 655,
+    "watchHistory": [
+      {
+        "id": "l7o9rwHzVdQ",
+        "title": "Learn JavaScript in 10 Minutes | JavaScript for Beginners",
+        "timestamp": "2026-05-28T08:52:07.987Z"
+      }
+    ]
+  },
+  {
+    "username": "white",
+    "xp": 50,
+    "level": 1,
+    "wins": 0,
+    "losses": 2,
+    "avatar": "https://api.dicebear.com/7.x/bottts/svg?seed=Bandit&backgroundColor=transparent",
+    "selectedClass": "edgelord",
+    "totalVideosWatched": 1,
+    "totalWatchTime": 655,
+    "watchHistory": [
+      {
+        "id": "l7o9rwHzVdQ",
+        "title": "Learn JavaScript in 10 Minutes | JavaScript for Beginners",
+        "timestamp": "2026-05-28T08:52:07.996Z"
+      }
+    ]
   },
   {
     "username": "Neo_zlv5ih",
@@ -127,18 +151,6 @@
   },
   {
     "username": "black",
-    "xp": 0,
-    "level": 1,
-    "wins": 0,
-    "losses": 1,
-    "avatar": "https://api.dicebear.com/7.x/bottts/svg?seed=Bandit&backgroundColor=transparent",
-    "selectedClass": "edgelord",
-    "totalVideosWatched": 0,
-    "totalWatchTime": 0,
-    "watchHistory": []
-  },
-  {
-    "username": "white",
     "xp": 0,
     "level": 1,
     "wins": 0,

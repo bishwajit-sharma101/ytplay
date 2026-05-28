@@ -25,16 +25,8 @@ export async function joinQueue(socket, { username, avatar, selectedClass, video
     socket.queuedVideoThumbnail = videoThumbnail;
   }
   
-  if (vsBot) {
-    // Instantly start a Bot match
-    await createBotMatch(socket, videoId, {
-      title: videoTitle,
-      channel: videoChannel,
-      duration: Number(videoDuration) || 300,
-      thumbnail: videoThumbnail
-    });
-    return;
-  }
+  // Store vsBot preference on socket for fallback logic
+  socket.vsBot = vsBot;
 
   if (videoId) {
     // Matchmaking for a specific video
@@ -48,31 +40,36 @@ export async function joinQueue(socket, { username, avatar, selectedClass, video
     if (queue.some((s) => s.id === socket.id)) return;
     
     if (queue.length > 0) {
-      // Match found!
+      // Match found! Cancel the opponent's bot fallback timer
       const opponent = queue.shift();
+      if (opponent.botFallbackTimer) clearTimeout(opponent.botFallbackTimer);
       await createHumanMatch(socket, opponent, videoId);
     } else {
       queue.push(socket);
       socket.queuedVideoId = videoId;
       console.log(`[Queue] Added to queue for video "${videoId}". Queue size: ${queue.length}`);
       
-      // Auto-Bot Match Fallback after 5 seconds
-      setTimeout(async () => {
-        if (activeQueues.has(videoId)) {
-          const currentQueue = activeQueues.get(videoId);
-          const idx = currentQueue.findIndex((s) => s.id === socket.id);
-          if (idx !== -1) {
-            currentQueue.splice(idx, 1);
-            console.log(`[Queue] Timeout reached, starting Bot Match for video "${videoId}"`);
-            await createBotMatch(socket, videoId, {
-              title: socket.queuedVideoTitle,
-              channel: socket.queuedVideoChannel,
-              duration: Number(socket.queuedVideoDuration) || 300,
-              thumbnail: socket.queuedVideoThumbnail
-            });
+      // Auto-Bot Match Fallback after 60 seconds (only if vsBot is enabled)
+      if (socket.vsBot) {
+        socket.botFallbackTimer = setTimeout(async () => {
+          if (activeQueues.has(videoId)) {
+            const currentQueue = activeQueues.get(videoId);
+            const idx = currentQueue.findIndex((s) => s.id === socket.id);
+            if (idx !== -1) {
+              currentQueue.splice(idx, 1);
+              console.log(`[Queue] 60s timeout reached, starting Bot Match for video "${videoId}"`);
+              await createBotMatch(socket, videoId, {
+                title: socket.queuedVideoTitle,
+                channel: socket.queuedVideoChannel,
+                duration: Number(socket.queuedVideoDuration) || 300,
+                thumbnail: socket.queuedVideoThumbnail
+              });
+            }
           }
-        }
-      }, 5000);
+        }, 60000);
+      } else {
+        console.log(`[Queue] Bot fallback disabled, waiting indefinitely for real opponent.`);
+      }
     }
   } else {
     // Quick Match (Random Video)
@@ -80,6 +77,7 @@ export async function joinQueue(socket, { username, avatar, selectedClass, video
 
     if (quickMatchQueue.length > 0) {
       const opponent = quickMatchQueue.shift();
+      if (opponent.botFallbackTimer) clearTimeout(opponent.botFallbackTimer);
       // Select random curated video
       const randomVideo = curatedVideos[Math.floor(Math.random() * curatedVideos.length)];
       await createHumanMatch(socket, opponent, randomVideo.id, randomVideo);
@@ -88,15 +86,19 @@ export async function joinQueue(socket, { username, avatar, selectedClass, video
       socket.queuedVideoId = null;
       console.log(`[Queue] Added to Quick Match queue. Queue size: ${quickMatchQueue.length}`);
       
-      // Auto-Bot Match Fallback after 5 seconds
-      setTimeout(async () => {
-        const idx = quickMatchQueue.findIndex((s) => s.id === socket.id);
-        if (idx !== -1) {
-           quickMatchQueue.splice(idx, 1);
-           console.log(`[Queue] Timeout reached, starting Quick Match vs Bot`);
-           await createBotMatch(socket, null);
-        }
-      }, 5000);
+      // Auto-Bot Match Fallback after 60 seconds (only if vsBot is enabled)
+      if (socket.vsBot) {
+        socket.botFallbackTimer = setTimeout(async () => {
+          const idx = quickMatchQueue.findIndex((s) => s.id === socket.id);
+          if (idx !== -1) {
+             quickMatchQueue.splice(idx, 1);
+             console.log(`[Queue] 60s timeout reached, starting Quick Match vs Bot`);
+             await createBotMatch(socket, null);
+          }
+        }, 60000);
+      } else {
+        console.log(`[Queue] Bot fallback disabled for Quick Match, waiting indefinitely.`);
+      }
     }
   }
 }
@@ -106,6 +108,11 @@ export function leaveQueue(socket) {
 }
 
 export function cleanUpQueue(socket) {
+  // Cancel any pending bot fallback timer
+  if (socket.botFallbackTimer) {
+    clearTimeout(socket.botFallbackTimer);
+    socket.botFallbackTimer = null;
+  }
   quickMatchQueue = quickMatchQueue.filter((x) => x.id !== socket.id);
   if (socket.queuedVideoId && activeQueues.has(socket.queuedVideoId)) {
     const q = activeQueues.get(socket.queuedVideoId);
