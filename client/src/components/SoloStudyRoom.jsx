@@ -3,24 +3,15 @@ import * as sound from "../utils/audio";
 import YoutubePlayer from "./YoutubePlayer";
 import { parseMarkdownToHTML } from "../utils/markdown";
 
-const STUDY_GEN_LOGS = [
-  "🔍 Analyzing video context & topics...",
-  "🎯 Aligning guide with onboarding goals...",
-  "📚 Structuring deep theoretical breakdown...",
-  "📋 Constructing syntax comparison matrices...",
-  "💻 Formulating Before/After code examples...",
-  "💼 Pinpointing core mock interview questions...",
-  "⚡ Preparing interactive practice challenges...",
-  "✨ Finalizing formatting and rendering guide..."
-];
 
 export default function SoloStudyRoom({ video, username, isDarkMode, backendUrl, onBack, onAddSoloXp }) {
   const [progress, setProgress] = useState(0);
   const [activeTab, setActiveTab] = useState("notes"); // notes, quiz
   const [notes, setNotes] = useState(null);
   const [loadingNotes, setLoadingNotes] = useState(false);
-  const [notesGenStep, setNotesGenStep] = useState(0);
-  const [notesGenLog, setNotesGenLog] = useState([]);
+  const [statusText, setStatusText] = useState("Analyzing video context...");
+  const [isNotesExpanded, setIsNotesExpanded] = useState(false);
+  const [noteStyle, setNoteStyle] = useState("smart");
 
   // Quiz States: not_started, loading, active, completed
   const [quizState, setQuizState] = useState("not_started");
@@ -58,21 +49,27 @@ export default function SoloStudyRoom({ video, username, isDarkMode, backendUrl,
   // Generate Notes
   const handleGenerateNotes = async () => {
     setLoadingNotes(true);
-    setNotesGenStep(0);
-    setNotesGenLog([STUDY_GEN_LOGS[0]]);
+    const statusMessages = [
+      "Analyzing video context & topics...",
+      "Aligning study guide with onboarding goals...",
+      "Structuring deep theoretical breakdown...",
+      "Constructing syntax comparison matrices...",
+      "Formulating code examples...",
+      "Pinpointing core mock interview questions...",
+      "Preparing interactive practice challenges...",
+      "Formatting and rendering guide..."
+    ];
+    setStatusText(statusMessages[0]);
 
+    let msgIdx = 0;
     const logInterval = setInterval(() => {
-      setNotesGenStep(prev => {
-        const next = prev + 1;
-        if (next < STUDY_GEN_LOGS.length) {
-          setNotesGenLog(logs => [...logs, STUDY_GEN_LOGS[next]]);
-          return next;
-        } else {
-          clearInterval(logInterval);
-          return prev;
-        }
-      });
-    }, 1200);
+      msgIdx++;
+      if (msgIdx < statusMessages.length) {
+        setStatusText(statusMessages[msgIdx]);
+      } else {
+        clearInterval(logInterval);
+      }
+    }, 1500);
 
     try {
       sound.playClockTick();
@@ -86,7 +83,7 @@ export default function SoloStudyRoom({ video, username, isDarkMode, backendUrl,
       const res = await fetch(`${backendUrl}/api/pathfinder/study-notes`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ topic, milestone, answers })
+        body: JSON.stringify({ topic, milestone, answers, noteStyle })
       });
       const data = await res.json();
       clearInterval(logInterval);
@@ -288,6 +285,36 @@ export default function SoloStudyRoom({ video, username, isDarkMode, backendUrl,
         }
         .unlocked-pulse {
           animation: pulse 1.5s infinite ease-in-out;
+        }
+        
+        @keyframes floatCard {
+          0%, 100% { transform: translateY(0px) rotate(0deg); }
+          50% { transform: translateY(-6px) rotate(0.5deg); }
+        }
+        @keyframes auraPulse {
+          0%, 100% { transform: scale(1); opacity: 0.55; }
+          50% { transform: scale(1.2); opacity: 0.85; }
+        }
+        @keyframes skeletonShimmer {
+          0% { background-position: -200% 0; }
+          100% { background-position: 200% 0; }
+        }
+        .animate-float-card {
+          animation: floatCard 4s ease-in-out infinite;
+        }
+        .animate-aura-pulse {
+          animation: auraPulse 3s ease-in-out infinite;
+        }
+        .skeleton-line {
+          height: 8px;
+          border-radius: 4px;
+          background: linear-gradient(90deg, 
+            rgba(255, 106, 0, 0.12) 25%, 
+            rgba(255, 179, 0, 0.25) 50%, 
+            rgba(255, 106, 0, 0.12) 75%
+          );
+          background-size: 200% 100%;
+          animation: skeletonShimmer 1.8s infinite linear;
         }
         
         /* Custom scrollbars */
@@ -560,9 +587,9 @@ export default function SoloStudyRoom({ video, username, isDarkMode, backendUrl,
         
         {/* Left Side: Large Immersive Player */}
         <div style={{
-          width: "55%",
+          width: isNotesExpanded ? "0%" : "55%",
+          display: isNotesExpanded ? "none" : "flex",
           padding: "32px",
-          display: "flex",
           flexDirection: "column",
           gap: "32px",
           background: isDarkMode ? "rgba(13, 8, 5, 0.6)" : "rgba(255, 255, 255, 0.6)",
@@ -596,12 +623,71 @@ export default function SoloStudyRoom({ video, username, isDarkMode, backendUrl,
             </div>
           </div>
  
+          {/* Quiz Access Button - Positioned at bottom right of the video */}
+          <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "8px" }}>
+            {progress < 90 ? (
+              <button 
+                disabled 
+                style={{
+                  padding: "10px 20px",
+                  borderRadius: "10px",
+                  background: isDarkMode ? "rgba(255,255,255,0.02)" : "#f8fafc",
+                  border: isDarkMode ? "1px solid rgba(255,255,255,0.06)" : "1px solid #e2e8f0",
+                  color: "var(--text-muted)",
+                  fontSize: "12.5px",
+                  fontWeight: "750",
+                  cursor: "not-allowed",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px"
+                }}
+              >
+                <span>🔒 Quiz Locked</span>
+                <span style={{ fontSize: "11px", opacity: 0.8 }}>({Math.round(progress)}% / 90%)</span>
+              </button>
+            ) : (
+              <button 
+                onClick={() => {
+                  sound.playClockTick();
+                  setActiveTab("quiz");
+                  if (quizState === "not_started") {
+                    handleStartQuiz();
+                  }
+                }}
+                style={{
+                  padding: "12px 24px",
+                  borderRadius: "12px",
+                  background: "linear-gradient(135deg, #10b981, #059669)",
+                  border: "none",
+                  color: "#ffffff",
+                  fontSize: "13px",
+                  fontWeight: "900",
+                  cursor: "pointer",
+                  boxShadow: "0 4px 15px rgba(16,185,129,0.3)",
+                  transition: "all 0.2s",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px"
+                }}
+                onMouseOver={e => {
+                  e.currentTarget.style.transform = "translateY(-1px)";
+                  e.currentTarget.style.boxShadow = "0 6px 18px rgba(16,185,129,0.45)";
+                }}
+                onMouseOut={e => {
+                  e.currentTarget.style.transform = "none";
+                  e.currentTarget.style.boxShadow = "0 4px 15px rgba(16,185,129,0.3)";
+                }}
+              >
+                <span>⚔️ Start Level Up Quiz</span>
+              </button>
+            )}
+          </div>
 
         </div>
  
         {/* Right Side: Interactive Notes & Quizzes */}
         <div style={{
-          width: "45%",
+          width: isNotesExpanded ? "100%" : "45%",
           display: "flex",
           flexDirection: "column",
           background: isDarkMode ? "rgba(13, 8, 5, 0.85)" : "rgba(255, 255, 255, 0.85)",
@@ -609,42 +695,68 @@ export default function SoloStudyRoom({ video, username, isDarkMode, backendUrl,
           borderRadius: "24px",
           border: isDarkMode ? "1px solid rgba(255, 106, 0, 0.2)" : "1px solid rgba(255, 106, 0, 0.15)",
           boxShadow: isDarkMode ? "0 20px 40px rgba(0,0,0,0.4)" : "0 20px 40px rgba(0,0,0,0.05)",
-          overflow: "hidden"
+          overflow: "hidden",
+          transition: "width 0.3s ease"
         }}>
           
-          {/* Tab Navigation */}
+          {/* Section Header */}
           <div style={{
             display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
             borderBottom: isDarkMode ? "1px solid rgba(255, 106, 0, 0.15)" : "1px solid #ffedd5",
+            padding: "16px 24px",
             flexShrink: 0
           }}>
-            {[
-              { id: "notes", label: "📝 AI Study Guide" },
-              { id: "quiz", label: progress >= 90 ? "⚡ Quest Quiz (Unlocked)" : "🔒 Quest Quiz (Locked)" }
-            ].map(t => (
-              <button
-                key={t.id}
-                onClick={() => { sound.playClockTick(); setActiveTab(t.id); }}
-                style={{
-                  flex: 1,
-                  padding: "16px 0",
-                  background: "transparent",
-                  border: "none",
-                  borderBottom: activeTab === t.id 
-                    ? `3px solid ${t.id === "quiz" && progress >= 90 ? "#10b981" : "#ff6a00"}` 
-                    : "3px solid transparent",
-                  color: activeTab === t.id 
-                    ? (isDarkMode ? "#ffb300" : "#ea580c") 
-                    : "var(--text-muted)",
-                  fontWeight: "800",
-                  fontSize: "14px",
-                  cursor: "pointer",
-                  transition: "all 0.2s"
-                }}
-              >
-                {t.label}
-              </button>
-            ))}
+            <div style={{ 
+              fontSize: "14.5px", 
+              fontWeight: "900", 
+              color: isDarkMode ? "#ffb300" : "#ea580c",
+              fontFamily: "'Outfit', sans-serif",
+              letterSpacing: "0.5px",
+              textTransform: "uppercase"
+            }}>
+              {activeTab === "notes" ? "📝 AI Study Guide" : "⚡ Quest Quiz"}
+            </div>
+
+            {/* Expand / Minimize Toggle Button */}
+            <button
+              onClick={() => { sound.playClockTick(); setIsNotesExpanded(prev => !prev); }}
+              title={isNotesExpanded ? "Show Video Player" : "Expand Study Panel"}
+              style={{
+                background: isDarkMode ? "rgba(255, 106, 0, 0.08)" : "#fff7ed",
+                border: isDarkMode ? "1px solid rgba(255, 106, 0, 0.2)" : "1px solid #ffedd5",
+                color: isDarkMode ? "#ff8c3a" : "#ea580c",
+                borderRadius: "8px",
+                width: "36px",
+                height: "36px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
+                transition: "all 0.2s",
+                marginLeft: "12px",
+                flexShrink: 0
+              }}
+              onMouseOver={e => e.currentTarget.style.background = isDarkMode ? "rgba(255, 106, 0, 0.16)" : "#ffedd5"}
+              onMouseOut={e => e.currentTarget.style.background = isDarkMode ? "rgba(255, 106, 0, 0.08)" : "#fff7ed"}
+            >
+              {isNotesExpanded ? (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M4 14h6v6" />
+                  <path d="M20 10h-6V4" />
+                  <path d="M14 10l7-7" />
+                  <path d="M10 14l-7 7" />
+                </svg>
+              ) : (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M15 3h6v6" />
+                  <path d="M9 21H3v-6" />
+                  <path d="M21 3l-7 7" />
+                  <path d="M3 21l7-7" />
+                </svg>
+              )}
+            </button>
           </div>
 
           {/* Tab Content Display Pane */}
@@ -661,59 +773,84 @@ export default function SoloStudyRoom({ video, username, isDarkMode, backendUrl,
                     alignItems: "center",
                     justifyContent: "center",
                     height: "100%",
-                    minHeight: "350px",
-                    textAlign: "center"
+                    minHeight: "380px",
+                    textAlign: "center",
+                    position: "relative"
                   }}>
-                    <div style={{
-                      width: "80px", height: "80px",
+                    {/* Glowing Gold/Orange Aura behind the card */}
+                    <div className="animate-aura-pulse" style={{
+                      position: "absolute",
+                      width: "180px",
+                      height: "180px",
                       borderRadius: "50%",
-                      background: "linear-gradient(135deg, #ff6a00, #ffb300)",
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                      fontSize: "40px", color: "#fff",
-                      boxShadow: "0 0 25px rgba(255,106,0,0.45)",
-                      marginBottom: "24px",
-                      animation: "pulse 1.8s infinite ease-in-out"
+                      background: "radial-gradient(circle, rgba(255, 106, 0, 0.25) 0%, rgba(255, 179, 0, 0.08) 55%, transparent 70%)",
+                      filter: "blur(24px)",
+                      pointerEvents: "none",
+                      zIndex: 0,
+                      transform: "translateY(-40px)"
+                    }} />
+
+                    {/* Floating Document Card */}
+                    <div className="animate-float-card" style={{
+                      position: "relative",
+                      zIndex: 1,
+                      width: "240px",
+                      height: "170px",
+                      background: isDarkMode ? "rgba(30, 41, 59, 0.45)" : "rgba(255, 255, 255, 0.8)",
+                      border: isDarkMode ? "1.5px solid rgba(255, 106, 0, 0.25)" : "1.5px solid rgba(255, 106, 0, 0.15)",
+                      borderRadius: "16px",
+                      boxShadow: isDarkMode ? "0 15px 35px rgba(0,0,0,0.3)" : "0 10px 25px rgba(255, 106, 0, 0.08)",
+                      backdropFilter: "blur(12px)",
+                      padding: "20px",
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "12px",
+                      boxSizing: "border-box",
+                      marginBottom: "28px"
                     }}>
-                      🧠
+                      {/* Document Header Icon & Title Skeleton */}
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px", borderBottom: isDarkMode ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(0,0,0,0.05)", paddingBottom: "10px" }}>
+                        <span style={{ fontSize: "16px" }}>✨</span>
+                        <div className="skeleton-line" style={{ width: "50%", height: "8px" }} />
+                      </div>
+
+                      {/* Document Body Lines */}
+                      <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                        <div className="skeleton-line" style={{ width: "90%" }} />
+                        <div className="skeleton-line" style={{ width: "85%" }} />
+                        <div className="skeleton-line" style={{ width: "95%" }} />
+                        <div className="skeleton-line" style={{ width: "60%" }} />
+                      </div>
+
+                      {/* Floating glowing pen tip drawing the content */}
+                      <div className="animate-aura-pulse" style={{
+                        position: "absolute",
+                        bottom: "24px",
+                        right: "32px",
+                        width: "8px",
+                        height: "8px",
+                        borderRadius: "50%",
+                        background: "#ff6a00",
+                        boxShadow: "0 0 10px #ff6a00, 0 0 20px #ffb300"
+                      }} />
                     </div>
-                    <h3 style={{ fontSize: "18px", fontWeight: "900", marginBottom: "8px" }}>
-                      Generating Study Guide
-                    </h3>
-                    <p style={{ color: "var(--text-muted)", fontSize: "13.5px", marginBottom: "28px", maxWidth: "320px", lineHeight: "1.4" }}>
-                      Gemini is scanning transcript semantics, generating comparison grids, code examples, and mock interview prep...
-                    </p>
-                    
-                    {/* Running terminal log */}
-                    <div style={{
-                      width: "100%",
-                      background: "#05070c",
-                      borderRadius: "12px",
-                      padding: "16px 20px",
-                      border: "1px solid rgba(255,255,255,0.06)",
-                      textAlign: "left"
-                    }}>
-                      {notesGenLog.map((log, idx) => (
-                        <div key={idx} style={{
-                          fontFamily: "monospace",
-                          fontSize: "12px",
-                          color: idx === notesGenLog.length - 1 ? "#ea580c" : "#94a3b8",
-                          marginBottom: "5px",
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "8px"
-                        }}>
-                          <span style={{ color: idx < notesGenLog.length - 1 ? "#10b981" : "#ea580c" }}>
-                            {idx < notesGenLog.length - 1 ? "✓" : "⚡"}
-                          </span>
-                          {log}
-                        </div>
-                      ))}
-                      {notesGenStep < STUDY_GEN_LOGS.length - 1 && (
-                        <div style={{ display: "flex", alignItems: "center", gap: "6px", fontFamily: "monospace", fontSize: "11px", color: "#475569" }}>
-                          <span style={{ display: "inline-block", width: "4px", height: "4px", borderRadius: "50%", background: "#ea580c", animation: "pulse 0.8s infinite" }} />
-                          running compilation...
-                        </div>
-                      )}
+
+                    {/* Status Info */}
+                    <div style={{ position: "relative", zIndex: 1 }}>
+                      <h3 style={{ 
+                        fontSize: "17px", 
+                        fontWeight: "900", 
+                        margin: "0 0 4px 0",
+                        background: "linear-gradient(135deg, #ff6a00, #ffb300)",
+                        WebkitBackgroundClip: "text",
+                        WebkitTextFillColor: "transparent",
+                        color: isDarkMode ? "transparent" : "#ea580c"
+                      }}>
+                        {statusText}
+                      </h3>
+                      <p style={{ color: "var(--text-muted)", fontSize: "12px", fontWeight: "600", textTransform: "uppercase", letterSpacing: "1.2px", margin: 0 }}>
+                        ✍️ Crafting Study Deck
+                      </p>
                     </div>
                   </div>
                 ) : notes ? (
@@ -755,31 +892,135 @@ export default function SoloStudyRoom({ video, username, isDarkMode, backendUrl,
                     minHeight: "350px",
                     textAlign: "center"
                   }}>
-                    <div style={{ fontSize: "44px", marginBottom: "16px" }}>✨</div>
-                    <h3 style={{ fontSize: "18px", fontWeight: "900", marginBottom: "8px" }}>
-                      Personalized Study Guide
+                    {/* Premium open-book card icon */}
+                    <div style={{
+                      position: "relative",
+                      width: "80px",
+                      height: "80px",
+                      marginBottom: "24px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      background: isDarkMode ? "rgba(255, 106, 0, 0.1)" : "#fff7ed",
+                      borderRadius: "20px",
+                      border: isDarkMode ? "1px solid rgba(255, 106, 0, 0.2)" : "1px solid #ffedd5",
+                      boxShadow: isDarkMode ? "0 8px 24px rgba(0,0,0,0.3)" : "0 8px 24px rgba(255, 106, 0, 0.05)",
+                    }}>
+                      <div className="animate-aura-pulse" style={{
+                        position: "absolute",
+                        width: "60px",
+                        height: "60px",
+                        borderRadius: "50%",
+                        background: "radial-gradient(circle, rgba(255, 106, 0, 0.3) 0%, transparent 70%)",
+                        filter: "blur(8px)",
+                        pointerEvents: "none"
+                      }} />
+                      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{
+                        color: "#ff6a00",
+                        position: "relative",
+                        zIndex: 1
+                      }}>
+                        <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z" />
+                        <path d="M6 6h10" />
+                        <path d="M6 10h10" />
+                        <path d="M6 14h10" />
+                      </svg>
+                    </div>
+
+                    <h3 style={{ 
+                      fontSize: "22px", 
+                      fontWeight: "900", 
+                      marginBottom: "12px",
+                      fontFamily: "'Outfit', sans-serif",
+                      letterSpacing: "-0.02em",
+                      color: isDarkMode ? "#ffffff" : "#0f172a"
+                    }}>
+                      AI Study Codex
                     </h3>
-                    <p style={{ color: "var(--text-muted)", fontSize: "14px", marginBottom: "24px", maxWidth: "340px", lineHeight: "1.5" }}>
-                      Generate an exhaustive learning guide tailored to your goal of <strong>"{topic}"</strong>. Includes theoretical tables, bad vs good code examples, and mock interview preps.
+                    <p style={{ 
+                      color: isDarkMode ? "#94a3b8" : "#475569", 
+                      fontSize: "14.5px", 
+                      marginBottom: "32px", 
+                      maxWidth: "360px", 
+                      lineHeight: "1.6",
+                      textAlign: "center"
+                    }}>
+                      Generate a comprehensive guide for <strong style={{ color: "#ff6a00", background: "none", boxShadow: "none", padding: 0 }}>"{topic}"</strong> with syntax comparison matrices, refactoring blueprints, and core interview questions.
                     </p>
+
+                    {/* Note Style Toggle Switch */}
+                    <div style={{
+                      display: "flex",
+                      alignItems: "center",
+                      background: isDarkMode ? "rgba(0,0,0,0.2)" : "#f8fafc",
+                      padding: "6px",
+                      borderRadius: "16px",
+                      border: isDarkMode ? "1px solid rgba(255,255,255,0.05)" : "1px solid #e2e8f0",
+                      marginBottom: "24px"
+                    }}>
+                      <button
+                        onClick={() => setNoteStyle("basic")}
+                        style={{
+                          padding: "8px 20px",
+                          borderRadius: "12px",
+                          border: "none",
+                          background: noteStyle === "basic" ? (isDarkMode ? "rgba(255, 106, 0, 0.15)" : "#ffedd5") : "transparent",
+                          color: noteStyle === "basic" ? "#ff6a00" : (isDarkMode ? "#94a3b8" : "#64748b"),
+                          fontWeight: noteStyle === "basic" ? "800" : "600",
+                          fontSize: "13.5px",
+                          cursor: "pointer",
+                          transition: "all 0.2s"
+                        }}
+                      >
+                        Basic Notes
+                      </button>
+                      <button
+                        onClick={() => setNoteStyle("smart")}
+                        style={{
+                          padding: "8px 20px",
+                          borderRadius: "12px",
+                          border: "none",
+                          background: noteStyle === "smart" ? (isDarkMode ? "rgba(255, 106, 0, 0.15)" : "#ffedd5") : "transparent",
+                          color: noteStyle === "smart" ? "#ff6a00" : (isDarkMode ? "#94a3b8" : "#64748b"),
+                          fontWeight: noteStyle === "smart" ? "800" : "600",
+                          fontSize: "13.5px",
+                          cursor: "pointer",
+                          transition: "all 0.2s",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "6px"
+                        }}
+                      >
+                        Smart Notes ✨
+                      </button>
+                    </div>
+
                     <button
                       onClick={handleGenerateNotes}
                       style={{
-                        padding: "14px 28px",
-                        borderRadius: "12px",
+                        padding: "15px 32px",
+                        borderRadius: "14px",
                         border: "none",
-                        background: "linear-gradient(135deg, #ff6a00, #ea580c)",
+                        background: "linear-gradient(135deg, #ff5a00, #ff8700)",
                         color: "#ffffff",
-                        fontWeight: "800",
-                        fontSize: "14px",
+                        fontWeight: "900",
+                        fontSize: "14.5px",
                         cursor: "pointer",
-                        boxShadow: "0 6px 20px rgba(255,106,0,0.3)",
-                        transition: "all 0.2s"
+                        boxShadow: "0 6px 20px rgba(255, 90, 0, 0.35)",
+                        transition: "all 0.25s cubic-bezier(0.4, 0, 0.2, 1)"
                       }}
-                      onMouseOver={e => e.currentTarget.style.transform = "translateY(-1px)"}
-                      onMouseOut={e => e.currentTarget.style.transform = "none"}
+                      onMouseOver={e => {
+                        e.currentTarget.style.transform = "translateY(-2px)";
+                        e.currentTarget.style.boxShadow = "0 8px 24px rgba(255, 90, 0, 0.55)";
+                        e.currentTarget.style.filter = "brightness(1.05)";
+                      }}
+                      onMouseOut={e => {
+                        e.currentTarget.style.transform = "none";
+                        e.currentTarget.style.boxShadow = "0 6px 20px rgba(255, 90, 0, 0.35)";
+                        e.currentTarget.style.filter = "none";
+                      }}
                     >
-                      🧠 Generate Guide via Gemini
+                      ✍️ Make Notes
                     </button>
                   </div>
                 )}

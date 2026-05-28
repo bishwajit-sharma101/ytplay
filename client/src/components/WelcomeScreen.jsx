@@ -1026,6 +1026,29 @@ export default function WelcomeScreen({
                   ▶  LOCK IN — {activeClass.name.split("The ")[1] || activeClass.name}
                 </button>
 
+                <button
+                  type="button"
+                  onClick={() => { sound.playClockTick(); setSignUpStep(3); }}
+                  style={{
+                    background: "transparent",
+                    border: `1.5px solid ${isDarkMode ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.15)"}`,
+                    borderRadius: "14px",
+                    padding: "12px 20px",
+                    color: textColor,
+                    fontSize: "13px",
+                    fontWeight: "800",
+                    letterSpacing: "1px",
+                    cursor: "pointer",
+                    transition: "all 0.2s",
+                    width: "100%",
+                    marginTop: "12px"
+                  }}
+                  onMouseOver={e => e.currentTarget.style.background = isDarkMode ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.03)"}
+                  onMouseOut={e => e.currentTarget.style.background = "transparent"}
+                >
+                  ⏭️ Skip Pathfinder & Create Account
+                </button>
+
                 <div style={{ textAlign: "center", marginTop: "14px" }}>
                   <span style={{ fontSize: "12px", color: textMuted }}>Already registered? </span>
                   <button type="button" onClick={() => { sound.playClockTick(); setAuthMode("signin"); }} style={{ background: "transparent", border: "none", color: currentThemeColor, fontWeight: "800", cursor: "pointer", fontSize: "12px", padding: 0 }}>
@@ -1122,6 +1145,25 @@ export default function WelcomeScreen({
                     }}
                   >
                     {onboardingQ === 4 ? "CONFIRM GOALS →" : "CONTINUE →"}
+                  </button>
+                </div>
+
+                <div style={{ textAlign: "center", marginTop: "18px" }}>
+                  <button
+                    type="button"
+                    onClick={() => { sound.playClockTick(); setSignUpStep(3); }}
+                    style={{
+                      background: "transparent",
+                      border: "none",
+                      color: textMuted,
+                      fontWeight: "700",
+                      cursor: "pointer",
+                      fontSize: "12px",
+                      textDecoration: "underline",
+                      padding: 0
+                    }}
+                  >
+                    Skip Interview & Skip Directly to Account Creation
                   </button>
                 </div>
               </div>
@@ -1928,16 +1970,27 @@ export default function WelcomeScreen({
                         ))}
                       </div>
 
-                      <div style={{ display: "flex", gap: "10px", marginTop: "2px" }}>
+                      <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginTop: "2px" }}>
                         <button
                           onClick={() => { sound.playClockTick(); setSignUpStep(2); }}
                           style={{
-                            flex: 1, background: `linear-gradient(90deg, ${currentThemeColor} 0%, #ff8c00 100%)`, border: `2px solid ${textColor}`,
+                            background: `linear-gradient(90deg, ${currentThemeColor} 0%, #ff8c00 100%)`, border: `2px solid ${textColor}`,
                             borderRadius: "10px", color: "#fff", fontFamily: "var(--font-gamer)",
                             fontSize: "13px", fontWeight: "900", padding: "14px 20px", cursor: "pointer", letterSpacing: "2px"
                           }}
                         >
                           [ CONFIRM: {activeClass.name.split("The ")[1] || activeClass.name} ]
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => { sound.playClockTick(); setSignUpStep(3); }}
+                          style={{
+                            background: "transparent", border: `2px dashed ${currentThemeColor}aa`,
+                            borderRadius: "10px", color: textColor, fontFamily: "var(--font-gamer)",
+                            fontSize: "12px", fontWeight: "900", padding: "10px 20px", cursor: "pointer", letterSpacing: "1.5px"
+                          }}
+                        >
+                          [ SKIP PATHFINDER & CREATE ACCOUNT ]
                         </button>
                       </div>
 
@@ -2040,6 +2093,20 @@ export default function WelcomeScreen({
                           }}
                         >
                           {onboardingQ === 4 ? "[ LOCK IN GOALS ]" : "[ CONTINUE ]"}
+                        </button>
+                      </div>
+
+                      <div style={{ textAlign: "center", marginTop: "12px" }}>
+                        <button
+                          type="button"
+                          onClick={() => { sound.playClockTick(); setSignUpStep(3); }}
+                          style={{
+                            background: "transparent", border: "none", color: textMuted,
+                            fontFamily: "var(--font-gamer)", fontSize: "11px", fontWeight: "bold",
+                            cursor: "pointer", letterSpacing: "1px", textDecoration: "underline", padding: 0
+                          }}
+                        >
+                          [ SKIP DIRECTLY TO ACCOUNT CREATION ]
                         </button>
                       </div>
                     </div>

@@ -326,6 +326,7 @@ function FullscreenNotesReader({ milestone, roadmapTopic, levelColor, onClose, o
   const [notes, setNotes] = useState(milestone.studyNotes || null);
   const [genStep, setGenStep] = useState(0);
   const [genLog, setGenLog] = useState([]);
+  const [noteStyle, setNoteStyle] = useState("smart");
 
   // Load answers for personalization
   const answersKey = `kaevrix_roadmap_answers_${username}`;
@@ -357,7 +358,7 @@ function FullscreenNotesReader({ milestone, roadmapTopic, levelColor, onClose, o
       const res = await fetch(`${BACKEND_URL}/api/pathfinder/study-notes`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ topic: roadmapTopic, milestone, answers })
+        body: JSON.stringify({ topic: roadmapTopic, milestone, answers, noteStyle })
       });
       const data = await res.json();
       clearInterval(logInterval);
@@ -737,9 +738,57 @@ function FullscreenNotesReader({ milestone, roadmapTopic, levelColor, onClose, o
                 <h3 style={{ fontSize: "22px", fontWeight: "900", color: "#0f172a", marginBottom: "8px" }}>
                   Detailed Study Notes & Code Examples
                 </h3>
-                <p style={{ color: "#64748b", fontSize: "15px", maxWidth: "460px", marginBottom: "28px", lineHeight: "1.6" }}>
+                <p style={{ color: "#64748b", fontSize: "15px", maxWidth: "460px", marginBottom: "32px", lineHeight: "1.6" }}>
                   Unlock an exhaustive, personalized study guide tailored to your goal of <strong>"{userReason}"</strong>. Includes comparisons, bad vs. good code blocks, and mock interview questions.
                 </p>
+
+                {/* Note Style Toggle Switch */}
+                <div style={{
+                  display: "flex",
+                  alignItems: "center",
+                  background: isDarkMode ? "rgba(0,0,0,0.2)" : "#f8fafc",
+                  padding: "6px",
+                  borderRadius: "16px",
+                  border: isDarkMode ? "1px solid rgba(255,255,255,0.05)" : "1px solid #e2e8f0",
+                  marginBottom: "24px"
+                }}>
+                  <button
+                    onClick={() => setNoteStyle("basic")}
+                    style={{
+                      padding: "8px 20px",
+                      borderRadius: "12px",
+                      border: "none",
+                      background: noteStyle === "basic" ? (isDarkMode ? "rgba(255, 106, 0, 0.15)" : "#ffedd5") : "transparent",
+                      color: noteStyle === "basic" ? "#ff6a00" : (isDarkMode ? "#94a3b8" : "#64748b"),
+                      fontWeight: noteStyle === "basic" ? "800" : "600",
+                      fontSize: "13.5px",
+                      cursor: "pointer",
+                      transition: "all 0.2s"
+                    }}
+                  >
+                    Basic Notes
+                  </button>
+                  <button
+                    onClick={() => setNoteStyle("smart")}
+                    style={{
+                      padding: "8px 20px",
+                      borderRadius: "12px",
+                      border: "none",
+                      background: noteStyle === "smart" ? (isDarkMode ? "rgba(255, 106, 0, 0.15)" : "#ffedd5") : "transparent",
+                      color: noteStyle === "smart" ? "#ff6a00" : (isDarkMode ? "#94a3b8" : "#64748b"),
+                      fontWeight: noteStyle === "smart" ? "800" : "600",
+                      fontSize: "13.5px",
+                      cursor: "pointer",
+                      transition: "all 0.2s",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "6px"
+                    }}
+                  >
+                    Smart Notes ✨
+                  </button>
+                </div>
+
                 <button
                   onClick={handleGenerate}
                   style={{

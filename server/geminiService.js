@@ -306,11 +306,14 @@ Return ONLY valid JSON, no markdown.`;
 /**
  * Generates AI study notes (markdown) for a specific milestone.
  */
-export async function generateStudyNotes(topic, milestone, answers = []) {
+export async function generateStudyNotes(topic, milestone, answers = [], noteStyle = 'smart') {
   const userReason = answers.find(a => a.question.toLowerCase().includes("why"))?.answer || "learning";
   const userGoal = answers.find(a => a.question.toLowerCase().includes("success"))?.answer || "mastery";
 
-  const prompt = `You are a world-class expert educator.
+  let prompt = "";
+
+  if (noteStyle === 'basic') {
+    prompt = `You are a world-class expert educator.
 Generate an exhaustive, high-fidelity, and deeply detailed study guide for this milestone:
 
 Topic: ${topic}
@@ -357,6 +360,46 @@ Ensure the tone is professional, encouraging, and highly educational. Generate t
 Your word count and depth must dynamically adapt to the complexity of the milestone:
 - For complex milestones (involving intricate rules, underlying architecture, or multi-step logic): Write a detailed, exhaustive study guide (800-1200 words) covering deep theory, edge cases, extensive examples, and detailed explanations.
 - For simple or syntax-only milestones (straightforward definitions, basic terms, or simple conventions): Keep it concise and direct (400-600 words) with clear explanations and examples. Do NOT add unnecessary fluff or wordy explanations just to hit a high word count.`;
+  } else {
+    prompt = `You are a world-class expert educator.
+Generate an exhaustive, high-fidelity, and deeply detailed "Smart Study Guide" for this milestone.
+Before generating the text, SILENTLY ask yourself the following self-reflection questions about the topic and milestone:
+- Is this topic conceptual?
+- Is this topic practical?
+- Is this topic visual?
+- Does this topic require memorization?
+- Does this topic require logic?
+- Does this topic involve comparisons?
+- Is this beginner difficult?
+- Does this topic involve sequences/steps?
+- Does this topic require real-world examples?
+- Is this topic interview/job relevant?
+- Does this topic involve cause/effect?
+- Does this topic require diagrams/flow explanation?
+- Would exercises improve retention?
+- Is this topic skill-based or theory-based?
+
+DO NOT output the answers to these questions. Instead, dynamically construct the markdown output based on the "Yes" answers using these mapping rules:
+* Conceptual → Explain deep ideas and underlying understanding.
+* Practical → Add real-world usage and implementation examples with code/actions.
+* Visual → Use flows, structures, and visual formatting (e.g., markdown mermaid flowcharts/diagrams if helpful).
+* Memorization → Add summaries, repetition, and cheat-sheet style lists.
+* Logic/Sequences/Steps → Add step-by-step numbered breakdowns.
+* Comparisons → Always include a comparison matrix/table.
+* Real-world examples → Add industry-specific use-cases.
+* Interview relevant → Include deep interview questions and under-the-hood explanations.
+* Exercises → Include interactive practice problems.
+
+Topic: ${topic}
+Milestone: ${milestone.title}
+Description: ${milestone.description || ""}
+Key Points: ${(milestone.keyPoints || []).join(", ")}
+User's Reason for learning: ${userReason}
+User's 3-month success target: ${userGoal}
+
+Ensure the tone is professional, encouraging, and highly educational.
+Output ONLY the final Markdown formatted study guide. Use beautiful typography, bolding, and structuring. Make the notes visually stunning and awesome.`;
+  }
 
   const apiKey = process.env.GEMINI_API_KEY;
   const useGemini = apiKey && apiKey !== "YOUR_GEMINI_API_KEY_HERE";

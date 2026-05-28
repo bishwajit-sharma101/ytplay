@@ -170,13 +170,13 @@ router.post("/pathfinder/generate", async (req, res) => {
 router.post("/pathfinder/study-notes", async (req, res) => {
   req.setTimeout(600000);
   res.setTimeout(600000);
-  const { topic, milestone, answers } = req.body;
+  const { topic, milestone, answers, noteStyle } = req.body;
   if (!topic || !milestone) {
     return res.status(400).json({ error: "topic and milestone required" });
   }
 
   try {
-    const notes = await generateStudyNotes(topic, milestone, answers);
+    const notes = await generateStudyNotes(topic, milestone, answers, noteStyle);
     res.json({ notes });
   } catch (err) {
     console.error("[Pathfinder] Study notes generation failed:", err.message);

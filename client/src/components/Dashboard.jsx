@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import * as sound from "../utils/audio";
 import CognitivePathfinder from "./CognitivePathfinder";
 import ProfilePanel from "./ProfilePanel";
@@ -52,6 +52,11 @@ export default function Dashboard({
   const [personalizedFeed, setPersonalizedFeed] = useState([]);
   const [loadingFeed, setLoadingFeed] = useState(false);
 
+  const selectedVideoRef = useRef(selectedVideo);
+  useEffect(() => {
+    selectedVideoRef.current = selectedVideo;
+  }, [selectedVideo]);
+
   // Load Pathfinder answers for query generation
   const answersKey = `kaevrix_roadmap_answers_${username}`;
   const savedAnswers = localStorage.getItem(answersKey);
@@ -100,6 +105,23 @@ export default function Dashboard({
     
     let isMounted = true;
     const fetchFeed = async () => {
+      const cacheKey = `kaevrix_feed_${username}_${encodeURIComponent(topic)}_${encodeURIComponent(why)}`;
+      const cached = sessionStorage.getItem(cacheKey);
+      if (cached) {
+        try {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setPersonalizedFeed(parsed);
+            if (!selectedVideoRef.current && isMounted) {
+              setSelectedVideo(parsed[0]);
+            }
+            return;
+          }
+        } catch (e) {
+          console.error("Error loading cached feed:", e);
+        }
+      }
+
       setLoadingFeed(true);
       try {
         const res = await fetch(`${backendUrl}/api/personalized-feed`, {
@@ -111,7 +133,12 @@ export default function Dashboard({
           const data = await res.json();
           const videos = data.videos || [];
           setPersonalizedFeed(videos);
-          if (videos.length > 0) {
+          try {
+            sessionStorage.setItem(cacheKey, JSON.stringify(videos));
+          } catch (e) {
+            console.error("Error setting session storage cache:", e);
+          }
+          if (videos.length > 0 && !selectedVideoRef.current) {
             setSelectedVideo(videos[0]);
           }
         }
@@ -126,7 +153,7 @@ export default function Dashboard({
     return () => {
       isMounted = false;
     };
-  }, [topic, why, searchQuery, backendUrl, setSelectedVideo]);
+  }, [topic, why, searchQuery, backendUrl, setSelectedVideo, username]);
 
   const handleTabChange = (tab) => {
     sound.playClockTick();
