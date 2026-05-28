@@ -95,7 +95,7 @@ router.post("/personalized-feed", async (req, res) => {
 
     const formatVideos = (results, categoryName) => {
       const videos = results.videos || [];
-      return videos.slice(0, 8).map(v => ({
+      return videos.slice(0, 12).map(v => ({
         id: v.videoId,
         title: v.title,
         channel: v.author ? v.author.name : "Unknown",
@@ -105,10 +105,42 @@ router.post("/personalized-feed", async (req, res) => {
       }));
     };
 
+    const coreVideos = formatVideos(coreRes, "Core Tutorial");
+    const interviewVideos = formatVideos(interviewRes, "Interview Prep");
+    const tipsVideos = formatVideos(tipsRes, "Pro Tips");
+
+    const recommendations = [];
+    let coreIdx = 0;
+    let intIdx = 0;
+    let tipsIdx = 0;
+
+    // Weave them: 2 Core, 1 Interview (if job seeker) or 1 Tips, etc.
+    while (coreIdx < coreVideos.length || intIdx < interviewVideos.length || tipsIdx < tipsVideos.length) {
+      // Add up to 2 Core videos
+      for (let i = 0; i < 2; i++) {
+        if (coreIdx < coreVideos.length) {
+          recommendations.push(coreVideos[coreIdx++]);
+        }
+      }
+      
+      // Add 1 Interview or Tips
+      if (isJobSeeker) {
+        if (intIdx < interviewVideos.length) {
+          recommendations.push(interviewVideos[intIdx++]);
+        } else if (tipsIdx < tipsVideos.length) {
+          recommendations.push(tipsVideos[tipsIdx++]);
+        }
+      } else {
+        if (tipsIdx < tipsVideos.length) {
+          recommendations.push(tipsVideos[tipsIdx++]);
+        } else if (intIdx < interviewVideos.length) {
+          recommendations.push(interviewVideos[intIdx++]);
+        }
+      }
+    }
+
     res.json({
-      core: formatVideos(coreRes, `${cleanTopic} Core`),
-      interview: formatVideos(interviewRes, `${cleanTopic} Prep`),
-      tips: formatVideos(tipsRes, `${cleanTopic} Tips`)
+      videos: recommendations
     });
   } catch (error) {
     console.error("[PersonalizedFeed] Error generating personalized feed:", error);

@@ -12,11 +12,19 @@ const TRENDING_TOPICS = [
   { icon: "🌐", label: "Web Dev", color: "#ff6a00", players: 498 },
 ];
 
-const LIVE_BATTLES = [
-  { player1: "ByteKing_X", player2: "NeuralNova", topic: "React Hooks", duration: "4:21", viewers: 312 },
-  { player1: "SyntaxSage", player2: "LoopBreaker", topic: "Python Decorators", duration: "1:08", viewers: 198 },
-  { player1: "AlgoAce", player2: "DataDruid", topic: "Binary Search", duration: "7:55", viewers: 274 },
-];
+const getCategoryStyle = (category) => {
+  switch (category) {
+    case "Core Tutorial":
+      return { color: "#4338ca", bg: "#e0e7ff" };
+    case "Interview Prep":
+      return { color: "#065f46", bg: "#d1fae5" };
+    case "Pro Tips":
+      return { color: "#92400e", bg: "#fef3c7" };
+    default:
+      return { color: "#ea580c", bg: "#ffedd5" };
+  }
+};
+
 
 export default function Dashboard({
   isDarkMode,
@@ -41,9 +49,8 @@ export default function Dashboard({
   onStartSoloStudy
 }) {
   const [activeTab, setActiveTab] = useState("duels");
-  const [personalizedFeed, setPersonalizedFeed] = useState(null);
+  const [personalizedFeed, setPersonalizedFeed] = useState([]);
   const [loadingFeed, setLoadingFeed] = useState(false);
-  const [feedTab, setFeedTab] = useState("core"); // core, interview, tips
 
   // Load Pathfinder answers for query generation
   const answersKey = `kaevrix_roadmap_answers_${username}`;
@@ -51,6 +58,42 @@ export default function Dashboard({
   const answers = savedAnswers ? JSON.parse(savedAnswers) : null;
   const topic = answers && answers[0] ? answers[0].answer : "";
   const why = answers && answers[1] ? answers[1].answer : "";
+
+  // Helper to extract banner pills dynamically from active roadmap
+  const getBannerPills = () => {
+    if (!topic) return TRENDING_TOPICS;
+    
+    const roadmapKey = `kaevrix_roadmap_progress_${username}`;
+    const savedRoadmap = localStorage.getItem(roadmapKey);
+    if (savedRoadmap) {
+      try {
+        const r = JSON.parse(savedRoadmap);
+        const milestones = [
+          ...(r.level1?.milestones || []),
+          ...(r.level2?.milestones || []),
+          ...(r.level3?.milestones || [])
+        ];
+        
+        // Take first 6 milestones
+        const titles = milestones.slice(0, 6).map(m => ({
+          icon: "✦",
+          label: m.title,
+          color: r.level1?.color || "#ff6a00",
+          query: m.searchQuery || `${topic} ${m.title}`
+        }));
+        if (titles.length > 0) return titles;
+      } catch (e) {
+        console.error("Error parsing roadmap for banner pills:", e);
+      }
+    }
+    
+    return [
+      { icon: "🎓", label: `${topic} Basics`, color: "#4f46e5", query: `${topic} basics` },
+      { icon: "💻", label: `${topic} Course`, color: "#10b981", query: `${topic} course` },
+      { icon: "💼", label: `${topic} Interview`, color: "#ef4444", query: `${topic} interview` },
+      { icon: "⚡", label: `${topic} Tips`, color: "#f59e0b", query: `${topic} tips` },
+    ];
+  };
 
   useEffect(() => {
     if (!topic || searchQuery) return;
@@ -66,9 +109,10 @@ export default function Dashboard({
         });
         if (res.ok && isMounted) {
           const data = await res.json();
-          setPersonalizedFeed(data);
-          if (data.core && data.core.length > 0) {
-            setSelectedVideo(data.core[0]);
+          const videos = data.videos || [];
+          setPersonalizedFeed(videos);
+          if (videos.length > 0) {
+            setSelectedVideo(videos[0]);
           }
         }
       } catch (err) {
@@ -189,18 +233,30 @@ export default function Dashboard({
                     <span style={{ background: "rgba(16,185,129,0.2)", color: "#10b981", padding: "4px 12px", borderRadius: "20px", fontSize: "12px", fontWeight: "800", border: "1px solid rgba(16,185,129,0.3)", animation: "pulse 2s infinite" }}>🔴 LIVE</span>
                   </div>
                   <h1 style={{ fontSize: "36px", fontWeight: "900", color: isDarkMode ? "#ffffff" : "#1e293b", marginBottom: "8px", lineHeight: "1.2" }}>
-                    Choose Your <span style={{ background: "linear-gradient(135deg, #ff6a00, #ffb300)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Battle Ground</span>
+                    {topic ? (
+                      <>
+                        Master <span style={{ background: "linear-gradient(135deg, #ff6a00, #ffb300)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>{topic}</span> Training
+                      </>
+                    ) : (
+                      <>
+                        Choose Your <span style={{ background: "linear-gradient(135deg, #ff6a00, #ffb300)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Battle Ground</span>
+                      </>
+                    )}
                   </h1>
                   <p style={{ color: isDarkMode ? "rgba(255,255,255,0.6)" : "#475569", fontSize: "16px", maxWidth: "500px", lineHeight: "1.6" }}>
-                    Select a video, enter matchmaking, and face off against a real opponent. The AI generates your quiz from the video content.
+                    {topic ? (
+                      `A structured training ground tailored to your goal of "${why || "learning " + topic}". Face off in duels or enter the solo study theatre.`
+                    ) : (
+                      "Select a video, enter matchmaking, and face off against a real opponent. The AI generates your quiz from the video content."
+                    )}
                   </p>
 
-                  {/* Trending Topics Pills */}
+                  {/* Trending Topics / Roadmap Milestones Pills */}
                   <div style={{ marginTop: "24px", display: "flex", flexWrap: "wrap", gap: "10px" }}>
-                    {TRENDING_TOPICS.map(t => (
+                    {getBannerPills().map(t => (
                       <button
                         key={t.label}
-                        onClick={() => onSearch && onSearch(t.label)}
+                        onClick={() => onSearch && onSearch(t.query || t.label)}
                         style={{
                           display: "flex", alignItems: "center", gap: "6px",
                           padding: "8px 16px", borderRadius: "20px",
@@ -211,8 +267,8 @@ export default function Dashboard({
                           backdropFilter: "blur(8px)",
                         }}
                         onMouseOver={e => { 
-                          e.currentTarget.style.background = `${t.color}22`; 
-                          e.currentTarget.style.borderColor = t.color; 
+                          e.currentTarget.style.background = `${t.color || "#ff6a00"}22`; 
+                          e.currentTarget.style.borderColor = t.color || "#ff6a00"; 
                         }}
                         onMouseOut={e => { 
                           e.currentTarget.style.background = isDarkMode ? "rgba(255,255,255,0.07)" : "rgba(255, 255, 255, 0.75)"; 
@@ -220,9 +276,11 @@ export default function Dashboard({
                         }}
                       >
                         {t.icon} {t.label}
-                        <span style={{ fontSize: "11px", color: isDarkMode ? "rgba(255,255,255,0.7)" : "#64748b", fontWeight: "normal" }}>
-                          {t.players.toLocaleString()} playing
-                        </span>
+                        {!topic && t.players && (
+                          <span style={{ fontSize: "11px", color: isDarkMode ? "rgba(255,255,255,0.7)" : "#64748b", fontWeight: "normal" }}>
+                            {t.players.toLocaleString()} playing
+                          </span>
+                        )}
                       </button>
                     ))}
                   </div>
@@ -280,129 +338,14 @@ export default function Dashboard({
               </div>
             )}
 
-            {/* Personalized Feed Category Navigation Strip */}
-            {!searchQuery && topic && (
-              <div style={{
-                background: isDarkMode ? "rgba(30,30,40,0.3)" : "#f8fafc",
-                borderRadius: "20px",
-                border: isDarkMode ? "1px solid rgba(255,255,255,0.06)" : "1px solid #e2e8f0",
-                padding: "24px",
-                marginBottom: "32px",
-                boxShadow: "0 4px 12px rgba(0,0,0,0.01)"
-              }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px", flexWrap: "wrap", gap: "16px" }}>
-                  <div>
-                    <h3 style={{ fontSize: "16px", fontWeight: "900", color: isDarkMode ? "#ffb300" : "#ea580c", margin: 0, textTransform: "uppercase", letterSpacing: "1px" }}>
-                      🧠 personalized playlist: {topic}
-                    </h3>
-                    <p style={{ fontSize: "13px", color: "var(--text-muted)", margin: "4px 0 0 0" }}>
-                      Curated automatically from your cognitive goals and learning profile.
-                    </p>
-                  </div>
-                  
-                  {/* Category Tabs */}
-                  <div style={{ display: "flex", gap: "6px", background: isDarkMode ? "#0f172a" : "#e2e8f0", padding: "4px", borderRadius: "10px" }}>
-                    {[
-                      { id: "core", label: "🎓 Core Training", color: "#4f46e5" },
-                      { id: "interview", label: "💼 Career Prep", color: "#10b981" },
-                      { id: "tips", label: "⚡ Tips & Hacks", color: "#f59e0b" }
-                    ].map(t => (
-                      <button
-                        key={t.id}
-                        onClick={() => { sound.playClockTick(); setFeedTab(t.id); }}
-                        style={{
-                          padding: "8px 16px",
-                          borderRadius: "8px",
-                          border: "none",
-                          fontSize: "12.5px",
-                          fontWeight: "800",
-                          cursor: "pointer",
-                          transition: "all 0.2s",
-                          background: feedTab === t.id ? (isDarkMode ? "#1e293b" : "#ffffff") : "transparent",
-                          color: feedTab === t.id ? (isDarkMode ? "#ffb300" : t.color) : "var(--text-muted)",
-                          boxShadow: feedTab === t.id ? "0 2px 8px rgba(0,0,0,0.05)" : "none"
-                        }}
-                      >
-                        {t.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Subtext description detailing active category context */}
-                <div style={{
-                  fontSize: "13px",
-                  color: "var(--text-muted)",
-                  background: isDarkMode ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.02)",
-                  padding: "12px 18px",
-                  borderRadius: "12px",
-                  borderLeft: `4px solid ${feedTab === "core" ? "#4f46e5" : feedTab === "interview" ? "#10b981" : "#f59e0b"}`,
-                  lineHeight: "1.5"
-                }}>
-                  {feedTab === "core" && `📚 Core learning materials for mastering ${topic} fundamentals step-by-step.`}
-                  {feedTab === "interview" && `💼 Specialized problem solving, coding challenges, and key interview prep questions targeting "${why || "getting a job"}".`}
-                  {feedTab === "tips" && `⚡ Speed techniques, pro shortcuts, clean code tips, and architectural hacks to work smarter.`}
-                </div>
-              </div>
-            )}
-
-            {/* Live Battles Spectate Strip */}
-            {!searchQuery && (
-              <div style={{ marginBottom: "32px" }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
-                  <h2 style={{ fontSize: "18px", fontWeight: "800", color: "var(--text-light)", display: "flex", alignItems: "center", gap: "8px" }}>
-                    <span style={{ background: "#ef4444", color: "#fff", padding: "2px 8px", borderRadius: "6px", fontSize: "11px", fontWeight: "900", animation: "pulse 1.5s infinite" }}>LIVE</span>
-                    Battles in Progress
-                  </h2>
-                  <span style={{ fontSize: "13px", color: "var(--text-muted)", fontWeight: "600" }}>{LIVE_BATTLES.length * 412 + 1} spectators watching</span>
-                </div>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "16px" }}>
-                  {LIVE_BATTLES.map((b, i) => (
-                    <div key={i} style={{
-                      background: isDarkMode ? "#1e293b" : "#ffffff",
-                      borderRadius: "16px",
-                      padding: "20px",
-                      border: isDarkMode ? "1px solid rgba(255,255,255,0.08)" : "1px solid #e2e8f0",
-                      boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
-                      display: "flex", flexDirection: "column", gap: "12px",
-                      transition: "all 0.2s",
-                      cursor: "default",
-                    }}>
-                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                        <span style={{ fontSize: "11px", fontWeight: "800", color: "#64748b", textTransform: "uppercase", letterSpacing: "1px" }}>⚔️ {b.topic}</span>
-                        <span style={{ fontSize: "11px", color: "#ef4444", fontWeight: "700", display: "flex", alignItems: "center", gap: "4px" }}>
-                          <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#ef4444", display: "inline-block" }} />
-                          {b.duration}
-                        </span>
-                      </div>
-                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                          <div style={{ width: "32px", height: "32px", borderRadius: "50%", background: "linear-gradient(135deg, #ff6a00, #ffb300)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "14px", fontWeight: "800", color: "#fff" }}>{b.player1[0]}</div>
-                          <span style={{ fontSize: "14px", fontWeight: "700", color: "var(--text-light)" }}>{b.player1}</span>
-                        </div>
-                        <span style={{ fontWeight: "900", fontSize: "16px", color: "#ef4444" }}>VS</span>
-                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                          <span style={{ fontSize: "14px", fontWeight: "700", color: "var(--text-light)" }}>{b.player2}</span>
-                          <div style={{ width: "32px", height: "32px", borderRadius: "50%", background: "linear-gradient(135deg, #8b5cf6, #3b82f6)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "14px", fontWeight: "800", color: "#fff" }}>{b.player2[0]}</div>
-                        </div>
-                      </div>
-                      <div style={{ fontSize: "12px", color: "var(--text-muted)", display: "flex", alignItems: "center", gap: "4px" }}>
-                        👁️ {b.viewers} spectating
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
             {/* Video Selection Header */}
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "20px" }}>
               <div>
                 <h2 style={{ fontSize: "22px", fontWeight: "800", color: "var(--text-light)", marginBottom: "4px" }}>
-                  {searchQuery ? `Results for "${searchQuery}"` : (topic ? `🎯 Personalized training: ${topic}` : "🎯 Featured Training Videos")}
+                  {searchQuery ? `Results for "${searchQuery}"` : (topic ? `✨ Recommended for You` : "🎯 Featured Training Videos")}
                 </h2>
                 <p style={{ color: "var(--text-muted)", fontSize: "14px" }}>
-                  {isSearching || loadingFeed ? "Scanning the learning grid..." : (searchQuery ? `${searchResults?.length || 0} videos found` : (topic ? `Categorized under ${feedTab.toUpperCase()} training mode` : "Hand-picked educational content — AI quizzes generated from each video"))}
+                  {isSearching || loadingFeed ? "Scanning the learning grid..." : (searchQuery ? `${searchResults?.length || 0} videos found` : (topic ? `Your personalized YouTube recommendations grid based on Pathfinder goals.` : "Hand-picked educational content — AI quizzes generated from each video"))}
                 </p>
               </div>
               {searchQuery && (
@@ -561,132 +504,135 @@ export default function Dashboard({
             ) : (
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "24px" }}>
                 {(() => {
-                  if (searchResults?.length > 0 || searchQuery) {
+                  if (searchQuery) {
                     return searchResults || [];
                   }
-                  if (topic && personalizedFeed?.[feedTab]) {
-                    return personalizedFeed[feedTab];
+                  if (topic && Array.isArray(personalizedFeed) && personalizedFeed.length > 0) {
+                    return personalizedFeed;
                   }
                   return curatedVideos;
-                })().map((video) => (
-                  <div
-                    key={video.id}
-                    onClick={() => handleSelectVideo(video)}
-                    style={{
-                      background: selectedVideo?.id === video.id 
-                        ? (isDarkMode ? "rgba(255, 106, 0, 0.08)" : "#fff7ed") 
-                        : (isDarkMode ? "#1e293b" : "#ffffff"),
-                      border: selectedVideo?.id === video.id 
-                        ? "2px solid #ff6a00" 
-                        : (isDarkMode ? "1px solid rgba(255,255,255,0.08)" : "1px solid #e2e8f0"),
-                      borderRadius: "18px",
-                      overflow: "hidden",
-                      cursor: "pointer",
-                      transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-                      boxShadow: selectedVideo?.id === video.id 
-                        ? "0 10px 30px rgba(255,106,0,0.2)" 
-                        : "0 2px 8px rgba(0,0,0,0.06)",
-                      transform: selectedVideo?.id === video.id ? "translateY(-4px)" : "none",
-                      display: "flex", flexDirection: "column",
-                    }}
-                  >
-                    {/* 16:9 Thumbnail */}
-                    <div style={{ position: "relative", width: "100%", paddingTop: "56.25%", background: "#000", overflow: "hidden" }}>
-                      <img
-                        src={video.thumbnail}
-                        alt={video.title}
-                        style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", objectFit: "cover", opacity: 0.92 }}
-                      />
-                      {/* Gradient overlay */}
-                      <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 55%)" }} />
-
-                      {/* LIVE badge */}
-                      <div style={{ position: "absolute", top: "10px", left: "10px", background: "#ef4444", color: "#fff", padding: "3px 8px", borderRadius: "6px", fontSize: "10px", fontWeight: "900", display: "flex", alignItems: "center", gap: "5px" }}>
-                        <span style={{ width: "5px", height: "5px", borderRadius: "50%", background: "#fff", animation: "pulse 1.5s infinite" }} />
-                        LIVE
-                      </div>
-
-                      {/* Queue count */}
-                      <div style={{ position: "absolute", top: "10px", right: "10px", background: "rgba(0,0,0,0.55)", backdropFilter: "blur(6px)", color: "#fff", padding: "3px 8px", borderRadius: "6px", fontSize: "10px", fontWeight: "800", border: "1px solid rgba(255,255,255,0.12)" }}>
-                        👁️ {Math.floor(video.id.charCodeAt(0) * 3.7) + 120} queuing
-                      </div>
-
-                      {/* Duration */}
-                      <span style={{ position: "absolute", bottom: "10px", right: "10px", background: "rgba(0,0,0,0.7)", color: "#fff", padding: "3px 7px", borderRadius: "5px", fontSize: "11px", fontWeight: "700" }}>
-                        {Math.floor(video.duration / 60)}:{String(video.duration % 60).padStart(2, '0')}
-                      </span>
-                    </div>
-
-                    {/* Card Info */}
-                    <div style={{ padding: "18px", flex: 1, display: "flex", flexDirection: "column" }}>
-                      {/* Tags */}
-                      <div style={{ display: "flex", gap: "6px", marginBottom: "10px", flexWrap: "wrap" }}>
-                        <span style={{ fontSize: "10px", fontWeight: "800", color: "#ea580c", background: "#ffedd5", padding: "3px 8px", borderRadius: "5px", textTransform: "uppercase" }}>{video.category || "Training"}</span>
-                        <span style={{ fontSize: "10px", fontWeight: "800", color: "#4338ca", background: "#e0e7ff", padding: "3px 8px", borderRadius: "5px", textTransform: "uppercase" }}>TRENDING</span>
-                      </div>
-
-                      <h4 style={{ fontSize: "15px", fontWeight: "800", color: "var(--text-light)", marginBottom: "6px", display: "-webkit-box", WebkitLineClamp: "2", WebkitBoxOrient: "vertical", overflow: "hidden", lineHeight: "1.4" }}>
-                        {video.title}
-                      </h4>
-                      <p style={{ fontSize: "13px", color: "var(--text-muted)", marginBottom: "14px", display: "flex", alignItems: "center", gap: "5px", fontWeight: "600" }}>
-                        📺 {video.channel}
-                      </p>
-
-                      {selectedVideo?.id === video.id && (
-                        <div style={{ marginTop: "auto", paddingTop: "14px", borderTop: "1px solid #fed7aa", display: "flex", flexDirection: "column", gap: "10px", animation: "fadeIn 0.3s" }}>
-                          <button
-                            onClick={(e) => { e.stopPropagation(); onStartMatchmaking(); }}
-                            style={{
-                              width: "100%", padding: "14px",
-                              borderRadius: "12px", fontSize: "14px", fontWeight: "900",
-                              background: "linear-gradient(135deg, #ff6a00, #ffb300)",
-                              border: "none", color: "#fff", cursor: "pointer",
-                              boxShadow: "0 6px 20px rgba(255,106,0,0.35)",
-                              textTransform: "uppercase", letterSpacing: "1px",
-                              transition: "transform 0.2s, box-shadow 0.2s",
-                            }}
-                            onMouseOver={e => { e.currentTarget.style.transform = "scale(1.02)"; e.currentTarget.style.boxShadow = "0 8px 28px rgba(255,106,0,0.5)"; }}
-                            onMouseOut={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "0 6px 20px rgba(255,106,0,0.35)"; }}
-                          >
-                            ⚡ ENTER MATCHMAKING
-                          </button>
-                          
-                          <button
-                            onClick={(e) => { e.stopPropagation(); sound.playClockTick(); onStartSoloStudy(video); }}
-                            style={{
-                              width: "100%", padding: "12px",
-                              borderRadius: "12px", fontSize: "14px", fontWeight: "900",
-                              background: isDarkMode
-                                ? "linear-gradient(135deg, #4f46e5, #6366f1)"
-                                : "linear-gradient(135deg, #6366f1, #818cf8)",
-                              border: "none", color: "#fff", cursor: "pointer",
-                              boxShadow: isDarkMode ? "0 6px 20px rgba(99,102,241,0.25)" : "0 6px 20px rgba(99,102,241,0.35)",
-                              textTransform: "uppercase", letterSpacing: "1px",
-                              transition: "transform 0.2s, box-shadow 0.2s",
-                            }}
-                            onMouseOver={e => { e.currentTarget.style.transform = "scale(1.02)"; e.currentTarget.style.boxShadow = "0 8px 28px rgba(99,102,241,0.5)"; }}
-                            onMouseOut={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = isDarkMode ? "0 6px 20px rgba(99,102,241,0.25)" : "0 6px 20px rgba(99,102,241,0.35)"; }}
-                          >
-                            🎓 ENTER SOLO STUDY Room
-                          </button>
-
-                          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }} onClick={(e) => e.stopPropagation()}>
-                            <input
-                              type="checkbox"
-                              id={`bot-toggle-${video.id}`}
-                              checked={vsBot}
-                              onChange={(e) => { sound.playClockTick(); setVsBot(e.target.checked); }}
-                              style={{ width: "15px", height: "15px", accentColor: "#ff6a00", cursor: "pointer" }}
-                            />
-                            <label htmlFor={`bot-toggle-${video.id}`} style={{ fontSize: "13px", color: "var(--text-muted)", cursor: "pointer", userSelect: "none", fontWeight: "600" }}>
-                              Enable Bot Fallback
-                            </label>
-                          </div>
+                })().map((video) => {
+                  const catStyle = getCategoryStyle(video.category);
+                  return (
+                    <div
+                      key={video.id}
+                      onClick={() => handleSelectVideo(video)}
+                      style={{
+                        background: selectedVideo?.id === video.id 
+                          ? (isDarkMode ? "rgba(255, 106, 0, 0.08)" : "#fff7ed") 
+                          : (isDarkMode ? "#1e293b" : "#ffffff"),
+                        border: selectedVideo?.id === video.id 
+                          ? "2px solid #ff6a00" 
+                          : (isDarkMode ? "1px solid rgba(255,255,255,0.08)" : "1px solid #e2e8f0"),
+                        borderRadius: "18px",
+                        overflow: "hidden",
+                        cursor: "pointer",
+                        transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                        boxShadow: selectedVideo?.id === video.id 
+                          ? "0 10px 30px rgba(255,106,0,0.2)" 
+                          : "0 2px 8px rgba(0,0,0,0.06)",
+                        transform: selectedVideo?.id === video.id ? "translateY(-4px)" : "none",
+                        display: "flex", flexDirection: "column",
+                      }}
+                    >
+                      {/* 16:9 Thumbnail */}
+                      <div style={{ position: "relative", width: "100%", paddingTop: "56.25%", background: "#000", overflow: "hidden" }}>
+                        <img
+                          src={video.thumbnail}
+                          alt={video.title}
+                          style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", objectFit: "cover", opacity: 0.92 }}
+                        />
+                        {/* Gradient overlay */}
+                        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 55%)" }} />
+  
+                        {/* LIVE badge */}
+                        <div style={{ position: "absolute", top: "10px", left: "10px", background: "#ef4444", color: "#fff", padding: "3px 8px", borderRadius: "6px", fontSize: "10px", fontWeight: "900", display: "flex", alignItems: "center", gap: "5px" }}>
+                          <span style={{ width: "5px", height: "5px", borderRadius: "50%", background: "#fff", animation: "pulse 1.5s infinite" }} />
+                          LIVE
                         </div>
-                      )}
+  
+                        {/* Queue count */}
+                        <div style={{ position: "absolute", top: "10px", right: "10px", background: "rgba(0,0,0,0.55)", backdropFilter: "blur(6px)", color: "#fff", padding: "3px 8px", borderRadius: "6px", fontSize: "10px", fontWeight: "800", border: "1px solid rgba(255,255,255,0.12)" }}>
+                          👁️ {Math.floor(video.id.charCodeAt(0) * 3.7) + 120} queuing
+                        </div>
+  
+                        {/* Duration */}
+                        <span style={{ position: "absolute", bottom: "10px", right: "10px", background: "rgba(0,0,0,0.7)", color: "#fff", padding: "3px 7px", borderRadius: "5px", fontSize: "11px", fontWeight: "700" }}>
+                          {Math.floor(video.duration / 60)}:{String(video.duration % 60).padStart(2, '0')}
+                        </span>
+                      </div>
+  
+                      {/* Card Info */}
+                      <div style={{ padding: "18px", flex: 1, display: "flex", flexDirection: "column" }}>
+                        {/* Tags */}
+                        <div style={{ display: "flex", gap: "6px", marginBottom: "10px", flexWrap: "wrap" }}>
+                          <span style={{ fontSize: "10px", fontWeight: "800", color: catStyle.color, background: catStyle.bg, padding: "3px 8px", borderRadius: "5px", textTransform: "uppercase" }}>{video.category || "Training"}</span>
+                          <span style={{ fontSize: "10px", fontWeight: "800", color: "#4338ca", background: "#e0e7ff", padding: "3px 8px", borderRadius: "5px", textTransform: "uppercase" }}>TRENDING</span>
+                        </div>
+  
+                        <h4 style={{ fontSize: "15px", fontWeight: "800", color: "var(--text-light)", marginBottom: "6px", display: "-webkit-box", WebkitLineClamp: "2", WebkitBoxOrient: "vertical", overflow: "hidden", lineHeight: "1.4" }}>
+                          {video.title}
+                        </h4>
+                        <p style={{ fontSize: "13px", color: "var(--text-muted)", marginBottom: "14px", display: "flex", alignItems: "center", gap: "5px", fontWeight: "600" }}>
+                          📺 {video.channel}
+                        </p>
+  
+                        {selectedVideo?.id === video.id && (
+                          <div style={{ marginTop: "auto", paddingTop: "14px", borderTop: "1px solid #fed7aa", display: "flex", flexDirection: "column", gap: "10px", animation: "fadeIn 0.3s" }}>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); onStartMatchmaking(); }}
+                              style={{
+                                width: "100%", padding: "14px",
+                                borderRadius: "12px", fontSize: "14px", fontWeight: "900",
+                                background: "linear-gradient(135deg, #ff6a00, #ffb300)",
+                                border: "none", color: "#fff", cursor: "pointer",
+                                boxShadow: "0 6px 20px rgba(255,106,0,0.35)",
+                                textTransform: "uppercase", letterSpacing: "1px",
+                                transition: "transform 0.2s, box-shadow 0.2s",
+                              }}
+                              onMouseOver={e => { e.currentTarget.style.transform = "scale(1.02)"; e.currentTarget.style.boxShadow = "0 8px 28px rgba(255,106,0,0.5)"; }}
+                              onMouseOut={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "0 6px 20px rgba(255,106,0,0.35)"; }}
+                            >
+                              ⚡ ENTER MATCHMAKING
+                            </button>
+                            
+                            <button
+                              onClick={(e) => { e.stopPropagation(); sound.playClockTick(); onStartSoloStudy(video); }}
+                              style={{
+                                width: "100%", padding: "12px",
+                                borderRadius: "12px", fontSize: "14px", fontWeight: "900",
+                                background: isDarkMode
+                                  ? "linear-gradient(135deg, #4f46e5, #6366f1)"
+                                  : "linear-gradient(135deg, #6366f1, #818cf8)",
+                                border: "none", color: "#fff", cursor: "pointer",
+                                boxShadow: isDarkMode ? "0 6px 20px rgba(99,102,241,0.25)" : "0 6px 20px rgba(99,102,241,0.35)",
+                                textTransform: "uppercase", letterSpacing: "1px",
+                                transition: "transform 0.2s, box-shadow 0.2s",
+                              }}
+                              onMouseOver={e => { e.currentTarget.style.transform = "scale(1.02)"; e.currentTarget.style.boxShadow = "0 8px 28px rgba(99,102,241,0.5)"; }}
+                              onMouseOut={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = isDarkMode ? "0 6px 20px rgba(99,102,241,0.25)" : "0 6px 20px rgba(99,102,241,0.35)"; }}
+                            >
+                              🎓 ENTER SOLO STUDY Room
+                            </button>
+  
+                            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }} onClick={(e) => e.stopPropagation()}>
+                              <input
+                                type="checkbox"
+                                id={`bot-toggle-${video.id}`}
+                                checked={vsBot}
+                                onChange={(e) => { sound.playClockTick(); setVsBot(e.target.checked); }}
+                                style={{ width: "15px", height: "15px", accentColor: "#ff6a00", cursor: "pointer" }}
+                              />
+                              <label htmlFor={`bot-toggle-${video.id}`} style={{ fontSize: "13px", color: "var(--text-muted)", cursor: "pointer", userSelect: "none", fontWeight: "600" }}>
+                                Enable Bot Fallback
+                              </label>
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
 
