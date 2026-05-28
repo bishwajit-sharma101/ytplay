@@ -182,6 +182,7 @@ export default function App() {
   
   // Search state
   const [searchQuery, setSearchQuery] = useState("");
+  const [activeSearchQuery, setActiveSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
 
@@ -326,6 +327,7 @@ export default function App() {
   const triggerSearch = async (query) => {
     if (!query.trim()) return;
     setIsSearching(true);
+    setActiveSearchQuery(query.trim());
     try {
       const response = await fetch(`${BACKEND_URL}/api/search?q=${encodeURIComponent(query.trim())}`);
       const data = await response.json();
@@ -352,6 +354,7 @@ export default function App() {
   const clearSearch = () => {
     sound.playClockTick();
     setSearchQuery("");
+    setActiveSearchQuery("");
     setSearchResults([]);
     if (curatedVideos.length > 0) {
       setSelectedVideo(curatedVideos[0]);
@@ -882,9 +885,17 @@ export default function App() {
           getRankTitle={getRankTitle}
           onStartMatchmaking={startMatchmaking}
           backendUrl={BACKEND_URL}
-          searchQuery={searchQuery}
+          searchQuery={activeSearchQuery}
+          isSearching={isSearching}
           searchResults={searchResults}
-          onSearch={(query) => { setSearchQuery(query); triggerSearch(query); }}
+          onSearch={(query) => {
+            if (!query) {
+              clearSearch();
+            } else {
+              setSearchQuery(query);
+              triggerSearch(query);
+            }
+          }}
           onSurpassLimits={() => {
             setIsExitIntercept(false);
             setShowSurpassLimits(true);
