@@ -702,6 +702,7 @@ export default function Dashboard({
               if (onSearch) onSearch(topicName);
               setActiveTab("duels");
             }}
+            onStartSoloStudy={onStartSoloStudy}
             isDarkMode={isDarkMode}
           />
         )}

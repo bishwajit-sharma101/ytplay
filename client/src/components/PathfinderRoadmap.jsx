@@ -930,40 +930,7 @@ function MilestoneDetailPanel({ milestone, levelColor, onClose, onSearchDuel, on
             </div>
           )}
 
-          {/* Study Guide CTA */}
-          <div style={{
-            background: isDarkMode ? "rgba(255,255,255,0.02)" : "#f8fafc",
-            borderRadius: "16px",
-            padding: "20px",
-            border: isDarkMode ? "1.5px solid rgba(255,255,255,0.06)" : "1.5px solid #e2e8f0",
-            textAlign: "center"
-          }}>
-            <h4 style={{ fontSize: "15px", fontWeight: "800", color: isDarkMode ? "#fff" : "var(--text-light)", marginBottom: "6px" }}>
-              {hasNotes ? "📖 Study Notes Ready" : "✨ AI Study Notes Guide"}
-            </h4>
-            <p style={{ fontSize: "13px", color: isDarkMode ? "rgba(255,255,255,0.5)" : "var(--text-muted)", marginBottom: "16px", lineHeight: "1.5" }}>
-              {hasNotes 
-                ? "Your comprehensive study notes are ready for reading. Expand to fullscreen to start learning."
-                : "Generate a detailed study guide containing theoretical breakdowns, comparisons, and mock interview questions."}
-            </p>
-            <button
-              onClick={() => { sound.playClockTick(); onOpenNotes(); onClose(); }}
-              style={{
-                width: "100%",
-                padding: "12px 20px",
-                borderRadius: "10px",
-                border: "none",
-                background: `linear-gradient(135deg, ${levelColor}, ${levelColor}dd)`,
-                color: "#ffffff",
-                fontWeight: "900",
-                fontSize: "13.5px",
-                cursor: "pointer",
-                boxShadow: `0 4px 12px ${levelColor}22`
-              }}
-            >
-              {hasNotes ? "📖 Read Study Guide (Fullscreen)" : "✨ Generate Study Notes"}
-            </button>
-          </div>
+
         </div>
 
         {/* Footer actions */}
@@ -1467,7 +1434,7 @@ function SoloLearningModal({ video, milestone, username, onClose, onMarkComplete
   );
 }
 
-export default function PathfinderRoadmap({ roadmap: initialRoadmap, username, onSearchDuel, onReset, isDarkMode }) {
+export default function PathfinderRoadmap({ roadmap: initialRoadmap, username, onSearchDuel, onReset, onStartSoloStudy, isDarkMode }) {
   const storageKey = `kaevrix_roadmap_progress_${username}`;
 
   const [roadmap, setRoadmap] = useState(() => {
@@ -2005,7 +1972,12 @@ export default function PathfinderRoadmap({ roadmap: initialRoadmap, username, o
           onSearchDuel={onSearchDuel}
           onMarkComplete={(m) => { markComplete(m); setSelectedMilestone(null); }}
           onOpenNotes={() => setViewingNotes(true)}
-          onSelectVideo={(video) => setActiveVideo(video)}
+          onSelectVideo={(video) => {
+            if (onStartSoloStudy) {
+              onStartSoloStudy(video);
+            }
+            setSelectedMilestone(null);
+          }}
           isDarkMode={isDarkMode}
         />
       )}

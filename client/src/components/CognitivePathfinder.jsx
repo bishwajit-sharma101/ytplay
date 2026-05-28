@@ -5,7 +5,7 @@ import PathfinderRoadmap from "./PathfinderRoadmap";
 
 const BACKEND_URL = window.location.hostname === "localhost" ? "http://localhost:5000" : "";
 
-export default function CognitivePathfinder({ username, onTriggerSearch, isDarkMode }) {
+export default function CognitivePathfinder({ username, onTriggerSearch, onStartSoloStudy, isDarkMode }) {
   const roadmapKey = `kaevrix_roadmap_progress_${username}`;
   const answersKey = `kaevrix_roadmap_answers_${username}`;
 
@@ -151,6 +151,7 @@ export default function CognitivePathfinder({ username, onTriggerSearch, isDarkM
         username={username}
         onSearchDuel={handleSearchDuel}
         onReset={handleReset}
+        onStartSoloStudy={onStartSoloStudy}
         isDarkMode={isDarkMode}
       />
     );
