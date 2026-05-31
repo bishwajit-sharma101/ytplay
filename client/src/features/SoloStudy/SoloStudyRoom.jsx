@@ -26,6 +26,7 @@ export default function SoloStudyRoom({ video, username, isDarkMode, backendUrl,
   // ═══ Study Timer & Recharge ═══
   const RECHARGE_THRESHOLD = 1200; // 20 minutes in seconds
   const [studyElapsedSec, setStudyElapsedSec] = useState(0);
+  const [studyCycles, setStudyCycles] = useState(0);
   const [isRecharging, setIsRecharging] = useState(false);
   const studyTimerRef = useRef(null);
 
@@ -52,6 +53,7 @@ export default function SoloStudyRoom({ video, username, isDarkMode, backendUrl,
   const handleRechargeComplete = useCallback(() => {
     setIsRecharging(false);
     setStudyElapsedSec(0);
+    setStudyCycles(prev => prev + 1);
     sound.playCorrect();
   }, []);
 
@@ -634,6 +636,27 @@ export default function SoloStudyRoom({ video, username, isDarkMode, backendUrl,
           >
             +5m
           </button>
+
+          {/* Cycle Counter Pill (Only shows if cycles > 0) */}
+          {studyCycles > 0 && (
+            <span style={{
+              fontSize: "12px",
+              fontWeight: "800",
+              padding: "6px 14px",
+              borderRadius: "20px",
+              background: isDarkMode ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.03)",
+              color: isDarkMode ? "#94a3b8" : "#64748b",
+              border: isDarkMode ? "1.5px solid rgba(255,255,255,0.08)" : "1.5px solid #e2e8f0",
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              fontFamily: "'Outfit', sans-serif",
+              letterSpacing: "0.5px",
+            }}>
+              <span style={{ fontSize: "13px" }}>🔄</span>
+              {studyCycles} {studyCycles === 1 ? "CYCLE" : "CYCLES"}
+            </span>
+          )}
 
           {/* Study Timer Pill */}
           <span style={{

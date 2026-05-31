@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 
 /* ═══════════════════════════════════════════════════════════════
-   PREMIUM RECHARGE OVERLAY — Cinematic break experience
+   PREMIUM RECHARGE OVERLAY — Cinematic break experience (Audio Fixed)
    ═══════════════════════════════════════════════════════════════ */
 
 const RECHARGE_DURATION = 240; // 4 minutes
@@ -47,6 +47,9 @@ export default function RechargeOverlay({ onComplete }) {
   const [playlist] = useState(() => shuffleArray(SONG_CATALOG));
   const [currentIdx, setCurrentIdx] = useState(0);
   const audioRef = useRef(null);
+  
+  const [needsInteraction, setNeedsInteraction] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
 
   const currentSong = playlist[currentIdx];
   const remaining = Math.max(0, RECHARGE_DURATION - elapsed);
@@ -80,17 +83,24 @@ export default function RechargeOverlay({ onComplete }) {
     }
   }, [elapsed, onComplete]);
 
-  // Audio player logic
+  // Audio player logic (Standard Audio, No Web Audio API)
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio || !currentSong) return;
     
     audio.src = currentSong.file;
     audio.volume = 0.65;
-    
+
     const playPromise = audio.play();
     if (playPromise !== undefined) {
-      playPromise.catch(() => console.log("Autoplay prevented"));
+      playPromise.then(() => {
+        setNeedsInteraction(false);
+        setIsPlaying(true);
+      }).catch(() => {
+        console.warn("Autoplay blocked");
+        setNeedsInteraction(true);
+        setIsPlaying(false);
+      });
     }
 
     const onEnded = () => {
@@ -111,8 +121,18 @@ export default function RechargeOverlay({ onComplete }) {
     };
   }, []);
 
+  const handleUserInteraction = useCallback(() => {
+    if (audioRef.current) {
+      audioRef.current.play().then(() => {
+        setNeedsInteraction(false);
+        setIsPlaying(true);
+      }).catch(() => {});
+    }
+  }, []);
+
   const handleSkipSong = useCallback(() => {
     setCurrentIdx(prev => (prev + 1) % playlist.length);
+    setNeedsInteraction(false);
   }, [playlist.length]);
 
   const handleExit = useCallback(() => {
@@ -151,13 +171,13 @@ export default function RechargeOverlay({ onComplete }) {
           from { opacity: 0; }
           to { opacity: 1; }
         }
-        @keyframes ambientBreathe {
-          0%, 100% { transform: scale(1); opacity: 0.4; }
-          50% { transform: scale(1.15); opacity: 0.7; }
-        }
         @keyframes textReveal {
           from { opacity: 0; transform: translateY(20px); letter-spacing: 0.1em; }
           to { opacity: 1; transform: translateY(0); letter-spacing: 0.15em; }
+        }
+        @keyframes marquee {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
         }
         @keyframes drift {
           0% { transform: translate(0,0) rotate(0deg); opacity: 0; }
@@ -168,6 +188,11 @@ export default function RechargeOverlay({ onComplete }) {
         @keyframes pulseGlow {
           0%, 100% { text-shadow: 0 0 20px rgba(255,255,255,0.2); }
           50% { text-shadow: 0 0 40px rgba(255,255,255,0.6), 0 0 80px var(--glow-color); }
+        }
+        /* CSS-based heartbeat for feelable rhythm */
+        @keyframes beatPulse {
+          0%, 100% { transform: scale(1); opacity: 0.8; }
+          20% { transform: scale(1.05); opacity: 1; }
         }
       `}</style>
 
@@ -181,13 +206,51 @@ export default function RechargeOverlay({ onComplete }) {
       }}>
         <audio ref={audioRef} />
 
+        {/* Needs Interaction Overlay */}
+        {needsInteraction && (
+          <div style={{
+            position: "absolute", inset: 0, zIndex: 10000,
+            background: "rgba(0,0,0,0.8)", backdropFilter: "blur(10px)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}>
+            <button onClick={handleUserInteraction} style={{
+              padding: "20px 40px", fontSize: "24px", fontWeight: "900", fontFamily: "'Bebas Neue', sans-serif",
+              letterSpacing: "4px", background: "transparent", color: "#fff",
+              border: "2px solid #fff", cursor: "pointer", borderRadius: "8px",
+              boxShadow: "0 0 40px rgba(255,255,255,0.2)", transition: "all 0.3s"
+            }}
+            onMouseOver={e => { e.currentTarget.style.background = "#fff"; e.currentTarget.style.color = "#000"; }}
+            onMouseOut={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#fff"; }}>
+              START BREAK // SYNC AUDIO
+            </button>
+          </div>
+        )}
+
         {/* Ambient colored glow based on song category */}
         <div style={{
           position: "absolute", inset: 0,
-          background: `radial-gradient(circle at 50% 50%, ${colors.c1}22 0%, ${colors.c2}11 40%, transparent 80%)`,
-          animation: "ambientBreathe 8s ease-in-out infinite",
+          background: `radial-gradient(circle at 50% 50%, ${colors.c1}33 0%, ${colors.c2}11 50%, transparent 80%)`,
+          animation: isPlaying ? "beatPulse 2s ease-in-out infinite" : "none",
           transition: "background 3s ease",
         }} />
+
+        {/* Massive scrolling background text */}
+        <div style={{
+          position: "absolute", top: "50%", left: "50%",
+          transform: "translate(-50%, -50%)",
+          whiteSpace: "nowrap",
+          fontFamily: "'Bebas Neue', sans-serif",
+          fontSize: "40vw",
+          color: `${colors.c1}22`,
+          WebkitTextStroke: `4px ${colors.c1}66`,
+          opacity: 0,
+          filter: "blur(6px)",
+          pointerEvents: "none",
+          animation: "fadeIn 4s ease-out forwards",
+          transition: "all 3s ease",
+        }}>
+          {currentSong?.category} {currentSong?.category}
+        </div>
 
         {/* Slow moving ambient particles */}
         {particles.map((p, i) => (
@@ -239,11 +302,11 @@ export default function RechargeOverlay({ onComplete }) {
           </button>
         </div>
 
-        {/* ═══ IMPACTFUL TYPOGRAPHY ═══ */}
+        {/* ═══ KINETIC TYPOGRAPHY ═══ */}
         <div style={{
           position: "relative", zIndex: 10,
           display: "flex", flexDirection: "column", alignItems: "center",
-          textAlign: "center",
+          textAlign: "center", width: "100%", overflow: "hidden",
         }}>
           
           <div style={{
@@ -255,21 +318,23 @@ export default function RechargeOverlay({ onComplete }) {
             SYSTEM PAUSED
           </div>
 
+          {/* Massive Main Text */}
           <div style={{
             fontFamily: "'Bebas Neue', sans-serif",
             fontSize: "clamp(80px, 15vw, 180px)",
             lineHeight: "0.85", color: "#ffffff",
             letterSpacing: "0.05em",
-            animation: "textReveal 2s cubic-bezier(0.2, 1, 0.3, 1) 0.8s both",
-            textShadow: `0 20px 50px rgba(0,0,0,0.8), 0 0 100px ${colors.c1}66`,
-            transition: "text-shadow 3s ease",
+            animation: "textReveal 2s cubic-bezier(0.2, 1, 0.3, 1) 0.4s both",
+            textShadow: `0 20px 50px rgba(0,0,0,0.8), 0 0 40px ${colors.c1}88`,
           }}>
-            TIME TO<br />RECHARGE.
+            <div style={{ animation: isPlaying ? "beatPulse 2s ease-out infinite" : "none" }}>
+              TIME TO<br />RECHARGE.
+            </div>
           </div>
 
           {/* The minimal countdown timer */}
           <div style={{
-            marginTop: "60px",
+            marginTop: "40px",
             fontFamily: "'Bebas Neue', sans-serif",
             fontSize: "64px", color: "rgba(255,255,255,0.9)",
             letterSpacing: "0.1em",
