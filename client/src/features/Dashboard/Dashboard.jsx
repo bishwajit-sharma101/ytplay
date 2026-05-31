@@ -46,7 +46,8 @@ export default function Dashboard({
   onSurpassLimits,
   onTestJourneyDay,
   isSearching,
-  onStartSoloStudy
+  onStartSoloStudy,
+  setStatus
 }) {
   const [activeTab, setActiveTab] = useState("duels");
   const [personalizedFeed, setPersonalizedFeed] = useState([]);
@@ -163,6 +164,7 @@ export default function Dashboard({
   const handleSelectVideo = (video) => {
     sound.playClockTick();
     setSelectedVideo(video);
+    setStatus("mode_selection");
   };
 
   const navItems = [
@@ -603,59 +605,6 @@ export default function Dashboard({
                         <p style={{ fontSize: "13px", color: "var(--text-muted)", marginBottom: "14px", display: "flex", alignItems: "center", gap: "5px", fontWeight: "600" }}>
                           📺 {video.channel}
                         </p>
-  
-                        {selectedVideo?.id === video.id && (
-                          <div style={{ marginTop: "auto", paddingTop: "14px", borderTop: "1px solid #fed7aa", display: "flex", flexDirection: "column", gap: "10px", animation: "fadeIn 0.3s" }}>
-                            <button
-                              onClick={(e) => { e.stopPropagation(); onStartMatchmaking(); }}
-                              style={{
-                                width: "100%", padding: "14px",
-                                borderRadius: "12px", fontSize: "14px", fontWeight: "900",
-                                background: "linear-gradient(135deg, #ff6a00, #ffb300)",
-                                border: "none", color: "#fff", cursor: "pointer",
-                                boxShadow: "0 6px 20px rgba(255,106,0,0.35)",
-                                textTransform: "uppercase", letterSpacing: "1px",
-                                transition: "transform 0.2s, box-shadow 0.2s",
-                              }}
-                              onMouseOver={e => { e.currentTarget.style.transform = "scale(1.02)"; e.currentTarget.style.boxShadow = "0 8px 28px rgba(255,106,0,0.5)"; }}
-                              onMouseOut={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "0 6px 20px rgba(255,106,0,0.35)"; }}
-                            >
-                              ⚡ ENTER MATCHMAKING
-                            </button>
-                            
-                            <button
-                              onClick={(e) => { e.stopPropagation(); sound.playClockTick(); onStartSoloStudy(video); }}
-                              style={{
-                                width: "100%", padding: "12px",
-                                borderRadius: "12px", fontSize: "14px", fontWeight: "900",
-                                background: isDarkMode
-                                  ? "linear-gradient(135deg, #4f46e5, #6366f1)"
-                                  : "linear-gradient(135deg, #6366f1, #818cf8)",
-                                border: "none", color: "#fff", cursor: "pointer",
-                                boxShadow: isDarkMode ? "0 6px 20px rgba(99,102,241,0.25)" : "0 6px 20px rgba(99,102,241,0.35)",
-                                textTransform: "uppercase", letterSpacing: "1px",
-                                transition: "transform 0.2s, box-shadow 0.2s",
-                              }}
-                              onMouseOver={e => { e.currentTarget.style.transform = "scale(1.02)"; e.currentTarget.style.boxShadow = "0 8px 28px rgba(99,102,241,0.5)"; }}
-                              onMouseOut={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = isDarkMode ? "0 6px 20px rgba(99,102,241,0.25)" : "0 6px 20px rgba(99,102,241,0.35)"; }}
-                            >
-                              🎓 ENTER SOLO STUDY Room
-                            </button>
-  
-                            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }} onClick={(e) => e.stopPropagation()}>
-                              <input
-                                type="checkbox"
-                                id={`bot-toggle-${video.id}`}
-                                checked={vsBot}
-                                onChange={(e) => { sound.playClockTick(); setVsBot(e.target.checked); }}
-                                style={{ width: "15px", height: "15px", accentColor: "#ff6a00", cursor: "pointer" }}
-                              />
-                              <label htmlFor={`bot-toggle-${video.id}`} style={{ fontSize: "13px", color: "var(--text-muted)", cursor: "pointer", userSelect: "none", fontWeight: "600" }}>
-                                Enable Bot Fallback
-                              </label>
-                            </div>
-                          </div>
-                        )}
                       </div>
                     </div>
                   );
