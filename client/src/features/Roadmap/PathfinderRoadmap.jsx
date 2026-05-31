@@ -689,27 +689,42 @@ function FullscreenNotesReader({ milestone, roadmapTopic, levelColor, onClose, o
   );
 }
 
-function MilestoneDetailPanel({ milestone, levelColor, onClose, onSearchDuel, onMarkComplete, onOpenNotes, onSelectVideo, isDarkMode }) {
+function MilestoneDetailPanel({ roadmapTopic, milestone, levelColor, onClose, onSearchDuel, onMarkComplete, onUpdateMilestoneData, onOpenNotes, onSelectVideo, isDarkMode }) {
   const cfg = getStatusConfig(isDarkMode)[milestone.status] || getStatusConfig(isDarkMode).locked;
   const hasNotes = !!milestone.studyNotes;
 
   const [videos, setVideos] = useState([]);
   const [loadingVideos, setLoadingVideos] = useState(false);
 
+  const keyPoints = milestone.keyPoints || [];
+  const activeSubtopicIndex = milestone.subtopicIndex || 0;
+  const isAllSubtopicsFinished = activeSubtopicIndex >= keyPoints.length;
+
   useEffect(() => {
-    if (milestone.searchQuery) {
+    // Only search if strictly unlocked (skip locked and completed) and not all finished
+    if (milestone.status === "unlocked" && !isAllSubtopicsFinished && keyPoints.length > 0) {
+      const currentSubtopic = keyPoints[activeSubtopicIndex];
+      // Construct dynamic search query
+      const dynamicQuery = `${roadmapTopic} ${currentSubtopic} tutorial`;
+      
       setLoadingVideos(true);
-      fetch(`${BACKEND_URL}/api/search?q=${encodeURIComponent(milestone.searchQuery)}`)
+      fetch(`${BACKEND_URL}/api/search?q=${encodeURIComponent(dynamicQuery)}`)
         .then(res => res.json())
         .then(data => {
           if (Array.isArray(data)) {
-            setVideos(data.slice(0, 3));
+            // User requested ONLY ONE video (the best one)
+            setVideos(data.slice(0, 1));
           }
         })
         .catch(err => console.error("Error searching videos:", err))
         .finally(() => setLoadingVideos(false));
     }
-  }, [milestone.searchQuery]);
+  }, [milestone.status, activeSubtopicIndex, keyPoints, roadmapTopic]);
+
+  const handleFinishSubtopic = () => {
+    sound.playCorrect();
+    onUpdateMilestoneData(milestone.id, { subtopicIndex: activeSubtopicIndex + 1 });
+  };
 
   return (
     <div style={{
@@ -773,81 +788,124 @@ function MilestoneDetailPanel({ milestone, levelColor, onClose, onSearchDuel, on
         {/* Scrollable body */}
         <div style={{ padding: "24px 28px", overflowY: "auto", display: "flex", flexDirection: "column", gap: "24px" }}>
           
-          {/* Key Objectives */}
-          {milestone.keyPoints?.length > 0 && (
+          {/* Key Objectives & Subtopic Progression */}
+          {keyPoints.length > 0 && (
             <div>
-              <h3 style={{ fontSize: "11px", fontWeight: "900", color: "var(--neon-orange)", textTransform: "uppercase", letterSpacing: "1px", marginBottom: "12px" }}>
-                📌 Milestone Objectives
+              <h3 style={{ fontSize: "11px", fontWeight: "900", color: "var(--neon-orange)", textTransform: "uppercase", letterSpacing: "1px", marginBottom: "16px" }}>
+                📌 Subtopic Objectives
               </h3>
-              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                {milestone.keyPoints.map((pt, i) => (
-                  <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: "10px" }}>
-                    <div style={{
-                      width: "18px", height: "18px", borderRadius: "50%",
-                      background: milestone.status === "completed" ? "#10b981" : (isDarkMode ? "rgba(255,255,255,0.1)" : "#f1f5f9"),
-                      color: milestone.status === "completed" ? "#fff" : (isDarkMode ? "#fff" : "#475569"),
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                      fontSize: "9px", fontWeight: "900", flexShrink: 0, marginTop: "2px"
+              <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                {keyPoints.map((pt, i) => {
+                  const isFinished = milestone.status === "completed" || i < activeSubtopicIndex;
+                  const isUnlocked = milestone.status !== "locked" && i === activeSubtopicIndex;
+                  const isLocked = milestone.status === "locked" || i > activeSubtopicIndex;
+                  
+                  return (
+                    <div key={i} style={{ 
+                      display: "flex", flexDirection: "column", gap: "10px",
+                      opacity: isLocked ? 0.5 : 1,
+                      background: isUnlocked ? (isDarkMode ? "rgba(0,242,254,0.03)" : "#f0f9ff") : "transparent",
+                      border: isUnlocked ? `1px solid ${isDarkMode ? "rgba(0,242,254,0.2)" : "#bae6fd"}` : "1px solid transparent",
+                      borderRadius: "12px",
+                      padding: isUnlocked ? "12px" : "4px 12px",
+                      transition: "all 0.3s"
                     }}>
-                      {milestone.status === "completed" ? "✓" : i + 1}
-                    </div>
-                    <span style={{ fontSize: "13px", color: isDarkMode ? "rgba(255,255,255,0.8)" : "var(--text-light)", lineHeight: "1.4" }}>{pt}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* YouTube recommended videos */}
-          {milestone.status !== "locked" && (
-            <div>
-              <h3 style={{ fontSize: "11px", fontWeight: "900", color: "var(--neon-blue)", textTransform: "uppercase", letterSpacing: "1px", marginBottom: "12px" }}>
-                📺 Recommended Training Videos
-              </h3>
-              {loadingVideos ? (
-                <div style={{ display: "flex", alignItems: "center", gap: "10px", color: isDarkMode ? "rgba(255,255,255,0.4)" : "var(--text-muted)", fontSize: "13px" }}>
-                  <div className="spinner" style={{ width: "16px", height: "16px", border: `2px solid ${isDarkMode ? "#00f2fe" : "var(--neon-blue)"}`, borderTopColor: "transparent", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
-                  Scanning YouTube library for "{milestone.title}"...
-                </div>
-              ) : videos.length > 0 ? (
-                <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                  {videos.map((vid) => (
-                    <div
-                      key={vid.id}
-                      onClick={() => onSelectVideo && onSelectVideo(vid)}
-                      style={{
-                        display: "flex", gap: "12px", padding: "10px",
-                        background: isDarkMode ? "rgba(255,255,255,0.02)" : "#f8fafc",
-                        border: isDarkMode ? "1.5px solid rgba(255,255,255,0.06)" : "1.5px solid #e2e8f0",
-                        borderRadius: "12px", cursor: "pointer",
-                        transition: "all 0.2s", alignItems: "center"
-                      }}
-                      onMouseOver={e => { e.currentTarget.style.borderColor = "var(--neon-blue)"; e.currentTarget.style.background = isDarkMode ? "rgba(0,242,254,0.04)" : "rgba(255,106,0,0.04)"; }}
-                      onMouseOut={e => { e.currentTarget.style.borderColor = isDarkMode ? "rgba(255,255,255,0.06)" : "#e2e8f0"; e.currentTarget.style.background = isDarkMode ? "rgba(255,255,255,0.02)" : "#f8fafc"; }}
-                    >
-                      <div style={{ width: "90px", height: "50px", borderRadius: "6px", overflow: "hidden", flexShrink: 0, position: "relative", background: "#000" }}>
-                        <img src={vid.thumbnail} alt="thumbnail" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                        <span style={{ position: "absolute", bottom: "2px", right: "4px", background: "rgba(0,0,0,0.8)", fontSize: "9px", color: "#fff", padding: "1px 3px", borderRadius: "3px" }}>
-                          {Math.floor(vid.duration / 60)}:{String(vid.duration % 60).padStart(2, '0')}
+                      <div style={{ display: "flex", alignItems: "flex-start", gap: "12px" }}>
+                        <div style={{
+                          width: "22px", height: "22px", borderRadius: "50%",
+                          background: isFinished ? "#10b981" : (isUnlocked ? "var(--neon-blue)" : (isDarkMode ? "rgba(255,255,255,0.1)" : "#f1f5f9")),
+                          color: (isFinished || isUnlocked) ? "#fff" : (isDarkMode ? "#fff" : "#475569"),
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          fontSize: "11px", fontWeight: "900", flexShrink: 0, marginTop: "0px",
+                          boxShadow: isUnlocked ? "0 0 10px var(--neon-blue)" : "none"
+                        }}>
+                          {isFinished ? "✓" : (isUnlocked ? "▶" : i + 1)}
+                        </div>
+                        <span style={{ 
+                          fontSize: "14px", 
+                          color: isFinished ? "var(--text-muted)" : (isDarkMode ? "rgba(255,255,255,0.9)" : "var(--text-light)"),
+                          textDecoration: isFinished ? "line-through" : "none",
+                          fontWeight: isUnlocked ? "800" : "500",
+                          lineHeight: "1.4",
+                          marginTop: "2px"
+                        }}>
+                          {pt}
                         </span>
                       </div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ color: isDarkMode ? "#fff" : "var(--text-light)", fontSize: "13px", fontWeight: "bold", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", marginBottom: "3px" }}>
-                          {vid.title}
+                      
+                      {/* Dynamic Video Embed for the CURRENTLY Unlocked Subtopic */}
+                      {isUnlocked && (
+                        <div style={{ paddingLeft: "34px", marginTop: "4px" }}>
+                          {loadingVideos ? (
+                            <div style={{ display: "flex", alignItems: "center", gap: "10px", color: isDarkMode ? "rgba(255,255,255,0.4)" : "var(--text-muted)", fontSize: "12px" }}>
+                              <div className="spinner" style={{ width: "14px", height: "14px", border: `2px solid ${isDarkMode ? "#00f2fe" : "var(--neon-blue)"}`, borderTopColor: "transparent", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+                              Scanning YouTube for precisely "{pt}"...
+                            </div>
+                          ) : videos.length > 0 ? (
+                            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                              {videos.map((vid) => (
+                                <div
+                                  key={vid.id}
+                                  onClick={() => onSelectVideo && onSelectVideo(vid)}
+                                  style={{
+                                    display: "flex", gap: "12px", padding: "10px",
+                                    background: isDarkMode ? "rgba(255,255,255,0.02)" : "#ffffff",
+                                    border: isDarkMode ? "1.5px solid rgba(255,255,255,0.06)" : "1.5px solid #e2e8f0",
+                                    borderRadius: "10px", cursor: "pointer",
+                                    transition: "all 0.2s", alignItems: "center",
+                                    boxShadow: isDarkMode ? "none" : "0 2px 5px rgba(0,0,0,0.02)"
+                                  }}
+                                  onMouseOver={e => { e.currentTarget.style.borderColor = "var(--neon-blue)"; e.currentTarget.style.background = isDarkMode ? "rgba(0,242,254,0.04)" : "rgba(255,106,0,0.04)"; }}
+                                  onMouseOut={e => { e.currentTarget.style.borderColor = isDarkMode ? "rgba(255,255,255,0.06)" : "#e2e8f0"; e.currentTarget.style.background = isDarkMode ? "rgba(255,255,255,0.02)" : "#ffffff"; }}
+                                >
+                                  <div style={{ width: "100px", height: "56px", borderRadius: "6px", overflow: "hidden", flexShrink: 0, position: "relative", background: "#000" }}>
+                                    <img src={vid.thumbnail} alt="thumbnail" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                                    <span style={{ position: "absolute", bottom: "2px", right: "4px", background: "rgba(0,0,0,0.8)", fontSize: "9px", color: "#fff", padding: "1px 3px", borderRadius: "3px" }}>
+                                      {Math.floor(vid.duration / 60)}:{String(vid.duration % 60).padStart(2, '0')}
+                                    </span>
+                                  </div>
+                                  <div style={{ flex: 1, minWidth: 0 }}>
+                                    <div style={{ color: isDarkMode ? "#fff" : "var(--text-light)", fontSize: "13px", fontWeight: "bold", overflow: "hidden", textOverflow: "ellipsis", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", marginBottom: "4px" }}>
+                                      {vid.title}
+                                    </div>
+                                    <div style={{ color: isDarkMode ? "rgba(255,255,255,0.4)" : "var(--text-muted)", fontSize: "11px" }}>
+                                      🎬 {vid.channel}
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                              
+                              <button 
+                                onClick={handleFinishSubtopic}
+                                style={{
+                                  padding: "8px 16px", borderRadius: "8px", border: "none",
+                                  background: "#10b981", color: "#fff", fontWeight: "800", fontSize: "12px",
+                                  cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px"
+                                }}
+                              >
+                                ✓ Finish Subtopic
+                              </button>
+                            </div>
+                          ) : (
+                            <div style={{ color: isDarkMode ? "rgba(255,255,255,0.4)" : "var(--text-muted)", fontSize: "12px" }}>
+                              No specific video found for this subtopic. Click "Finish Subtopic" to proceed.
+                              <button 
+                                onClick={handleFinishSubtopic}
+                                style={{
+                                  marginTop: "8px", width: "100%", padding: "8px", borderRadius: "8px", border: "1px solid #10b981",
+                                  background: "transparent", color: "#10b981", fontWeight: "700", fontSize: "12px", cursor: "pointer"
+                                }}
+                              >
+                                ✓ Mark Subtopic Complete
+                              </button>
+                            </div>
+                          )}
                         </div>
-                        <div style={{ color: isDarkMode ? "rgba(255,255,255,0.4)" : "var(--text-muted)", fontSize: "11px" }}>
-                          🎬 {vid.channel}
-                        </div>
-                      </div>
-                      <span style={{ fontSize: "12px", color: "var(--neon-blue)", fontWeight: "bold", paddingRight: "6px" }}>▶ WATCH</span>
+                      )}
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <div style={{ color: isDarkMode ? "rgba(255,255,255,0.4)" : "var(--text-muted)", fontSize: "13px" }}>
-                  No training videos found. Use search or mark complete manually.
-                </div>
-              )}
+                  );
+                })}
+              </div>
             </div>
           )}
 
@@ -878,7 +936,7 @@ function MilestoneDetailPanel({ milestone, levelColor, onClose, onSearchDuel, on
             </button>
           )}
 
-          {milestone.status === "unlocked" && (
+          {milestone.status === "unlocked" && isAllSubtopicsFinished && (
             <button
               onClick={() => { sound.playClockTick(); onMarkComplete(milestone); onClose(); }}
               style={{
@@ -888,7 +946,7 @@ function MilestoneDetailPanel({ milestone, levelColor, onClose, onSearchDuel, on
                 cursor: "pointer"
               }}
             >
-              ✓ Mark Complete
+              ✓ Mark Milestone Complete
             </button>
           )}
         </div>
@@ -1380,6 +1438,27 @@ export default function PathfinderRoadmap({ roadmap: initialRoadmap, username, o
         for (let i = 0; i < ms.length; i++) {
           if (ms[i].id === milestoneId) {
             ms[i].studyNotes = notesText;
+            break;
+          }
+        }
+      }
+      return next;
+    });
+  };
+
+  const updateMilestoneData = (milestoneId, updates) => {
+    setRoadmap(prev => {
+      const next = JSON.parse(JSON.stringify(prev));
+      const levelsList = ["level1", "level2", "level3"];
+      for (const lk of levelsList) {
+        const ms = next[lk]?.milestones || [];
+        for (let i = 0; i < ms.length; i++) {
+          if (ms[i].id === milestoneId) {
+            Object.assign(ms[i], updates);
+            // also update selectedMilestone if it's the one currently open
+            if (selectedMilestone && selectedMilestone.id === milestoneId) {
+              setSelectedMilestone(prevSelected => ({ ...prevSelected, ...updates }));
+            }
             break;
           }
         }
@@ -1945,6 +2024,7 @@ export default function PathfinderRoadmap({ roadmap: initialRoadmap, username, o
       {/* Milestone detail modal */}
       {selectedMilestone && !viewingNotes && (
         <MilestoneDetailPanel
+          roadmapTopic={roadmap.topic}
           milestone={selectedMilestone}
           levelColor={
             roadmap.level1?.milestones?.find(m => m.id === selectedMilestone.id) ? "#10b981" :
@@ -1953,6 +2033,7 @@ export default function PathfinderRoadmap({ roadmap: initialRoadmap, username, o
           onClose={() => setSelectedMilestone(null)}
           onSearchDuel={onSearchDuel}
           onMarkComplete={(m) => { markComplete(m); setSelectedMilestone(null); }}
+          onUpdateMilestoneData={updateMilestoneData}
           onOpenNotes={() => setViewingNotes(true)}
           onSelectVideo={(video) => {
             if (onStartSoloStudy) {

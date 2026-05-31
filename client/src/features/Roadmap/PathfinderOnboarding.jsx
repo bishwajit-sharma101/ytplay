@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import * as sound from "../../utils/audio";
 
-const QUESTIONS = [
+const QUICK_QUESTIONS = [
   {
     id: "topic",
     question: "What do you want to learn?",
@@ -34,9 +34,45 @@ const QUESTIONS = [
   }
 ];
 
+const DETAILED_QUESTIONS = [
+  {
+    id: "problem",
+    question: "What exactly are you trying to achieve, and what problem is driving you?",
+    hint: "Tell me the specific reason or frustration pushing you to learn this right now.",
+    placeholder: "I want to achieve... because I am currently facing..."
+  },
+  {
+    id: "history",
+    question: "What have you tried so far, and where did you get stuck?",
+    hint: "Did you watch videos? Read books? What confused or frustrated you the most?",
+    placeholder: "So far I have tried... and I usually get stuck when..."
+  },
+  {
+    id: "dream",
+    question: "What is your ultimate 'dream outcome' if you master this?",
+    hint: "How would this change your day-to-day life, career, or personal satisfaction?",
+    placeholder: "My dream outcome is..."
+  },
+  {
+    id: "constraints",
+    question: "What are your biggest distractions or time constraints?",
+    hint: "Be honest. Social media? Work? Procrastination? How much time can you really commit?",
+    placeholder: "My biggest distraction is... I can realistically commit..."
+  },
+  {
+    id: "style",
+    question: "How do you learn best?",
+    hint: "Visual examples? Building projects? Reading docs? Let the AI know your style.",
+    placeholder: "I learn best when..."
+  }
+];
+
 export default function PathfinderOnboarding({ username, backendUrl, onRoadmapReady }) {
+  const [pathfinderMode, setPathfinderMode] = useState(null); // 'quick' | 'detailed'
+  const activeQuestions = pathfinderMode === 'detailed' ? DETAILED_QUESTIONS : QUICK_QUESTIONS;
+  
   const [currentQ, setCurrentQ] = useState(0);
-  const [answers, setAnswers] = useState(Array(QUESTIONS.length).fill(""));
+  const [answers, setAnswers] = useState(Array(5).fill(""));
   const [inputVal, setInputVal] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [genLog, setGenLog] = useState([]);
@@ -57,7 +93,8 @@ export default function PathfinderOnboarding({ username, backendUrl, onRoadmapRe
 
   // Typewriter effect for question
   useEffect(() => {
-    const q = QUESTIONS[currentQ]?.question || "";
+    if (!pathfinderMode) return;
+    const q = activeQuestions[currentQ]?.question || "";
     setTyped("");
     setIsTyping(true);
     let i = 0;
@@ -72,7 +109,7 @@ export default function PathfinderOnboarding({ username, backendUrl, onRoadmapRe
       }
     }, 28);
     return () => clearInterval(interval);
-  }, [currentQ]);
+  }, [currentQ, pathfinderMode]);
 
   // Generation log animation
   useEffect(() => {
@@ -100,13 +137,13 @@ export default function PathfinderOnboarding({ username, backendUrl, onRoadmapRe
     setAnswers(newAnswers);
     setInputVal("");
 
-    if (currentQ < QUESTIONS.length - 1) {
+    if (currentQ < activeQuestions.length - 1) {
       setCurrentQ(prev => prev + 1);
     } else {
       // All questions answered — generate roadmap
       setIsGenerating(true);
       try {
-        const payload = QUESTIONS.map((q, i) => ({
+        const payload = activeQuestions.map((q, i) => ({
           question: q.question,
           answer: newAnswers[i] || answers[i]
         }));
@@ -114,7 +151,7 @@ export default function PathfinderOnboarding({ username, backendUrl, onRoadmapRe
         const res = await fetch(`${backendUrl}/api/pathfinder/generate`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ answers: payload })
+          body: JSON.stringify({ answers: payload, pathfinderMode })
         });
 
         const roadmap = await res.json();
@@ -140,8 +177,10 @@ export default function PathfinderOnboarding({ username, backendUrl, onRoadmapRe
   };
 
   const handleBack = () => {
-    if (currentQ > 0) {
-      sound.playClockTick();
+    sound.playClockTick();
+    if (pathfinderMode && currentQ === 0) {
+      setPathfinderMode(null);
+    } else if (currentQ > 0) {
       setCurrentQ(prev => prev - 1);
       setInputVal(answers[currentQ - 1]);
     }
@@ -215,7 +254,7 @@ export default function PathfinderOnboarding({ username, backendUrl, onRoadmapRe
     );
   }
 
-  const progress = (currentQ / QUESTIONS.length) * 100;
+  const progress = (currentQ / activeQuestions.length) * 100;
 
   return (
     <div style={{ maxWidth: "680px", margin: "0 auto", padding: "40px 20px" }}>
@@ -238,18 +277,62 @@ export default function PathfinderOnboarding({ username, backendUrl, onRoadmapRe
           </span>
         </h1>
         <p style={{ color: "var(--text-muted)", fontSize: "15px" }}>
-          Answer {QUESTIONS.length} quick questions. AI reads them and builds your personalized path.
+          Answer 5 quick questions. AI reads them and builds your personalized path.
         </p>
       </div>
 
-      {/* Progress bar */}
+      {!pathfinderMode && (
+        <div style={{ display: "flex", flexDirection: "column", gap: "16px", marginTop: "24px" }}>
+          <button
+            onClick={() => { sound.playClockTick(); setPathfinderMode("quick"); setCurrentQ(0); setInputVal(""); }}
+            style={{
+              background: "#ffffff", border: "1px solid #e2e8f0",
+              borderRadius: "16px", padding: "24px",
+              textAlign: "left", cursor: "pointer", transition: "all 0.2s",
+              boxShadow: "0 4px 12px rgba(0,0,0,0.05)"
+            }}
+            onMouseOver={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.borderColor = "#ff6a00"; }}
+            onMouseOut={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.borderColor = "#e2e8f0"; }}
+          >
+            <div style={{ fontSize: "18px", fontWeight: "900", color: "var(--text-light)", marginBottom: "8px", display: "flex", alignItems: "center", gap: "8px" }}>
+              <span>⚡</span> Quick Setup
+            </div>
+            <div style={{ fontSize: "14px", color: "var(--text-muted)", lineHeight: "1.5" }}>
+              Standard 5 questions to build your path quickly. Ideal for straightforward topics.
+            </div>
+          </button>
+
+          <button
+            onClick={() => { sound.playClockTick(); setPathfinderMode("detailed"); setCurrentQ(0); setInputVal(""); }}
+            style={{
+              background: "#ffffff", border: "1px solid #e2e8f0",
+              borderRadius: "16px", padding: "24px",
+              textAlign: "left", cursor: "pointer", transition: "all 0.2s",
+              boxShadow: "0 4px 12px rgba(0,0,0,0.05)"
+            }}
+            onMouseOver={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.borderColor = "#ff6a00"; }}
+            onMouseOut={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.borderColor = "#e2e8f0"; }}
+          >
+            <div style={{ fontSize: "18px", fontWeight: "900", color: "var(--text-light)", marginBottom: "8px", display: "flex", alignItems: "center", gap: "8px" }}>
+              <span>🧠</span> Deep Dive
+            </div>
+            <div style={{ fontSize: "14px", color: "var(--text-muted)", lineHeight: "1.5" }}>
+              Open-ended questions about your problems, goals, and learning style for a highly tailored AI roadmap.
+            </div>
+          </button>
+        </div>
+      )}
+
+      {pathfinderMode && (
+        <>
+          {/* Progress bar */}
       <div style={{ marginBottom: "32px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
           <span style={{ fontSize: "12px", fontWeight: "700", color: "var(--text-muted)" }}>
-            Question {currentQ + 1} of {QUESTIONS.length}
+            Question {currentQ + 1} of {activeQuestions.length}
           </span>
           <div style={{ display: "flex", gap: "6px" }}>
-            {QUESTIONS.map((_, i) => (
+            {activeQuestions.map((_, i) => (
               <div key={i} style={{
                 width: i === currentQ ? "24px" : "8px",
                 height: "8px", borderRadius: "4px",
@@ -304,7 +387,7 @@ export default function PathfinderOnboarding({ username, backendUrl, onRoadmapRe
 
         {/* Hint */}
         <p style={{ color: "var(--text-muted)", fontSize: "14px", marginBottom: "28px", lineHeight: "1.6" }}>
-          💡 {QUESTIONS[currentQ]?.hint}
+          💡 {activeQuestions[currentQ]?.hint}
         </p>
 
         {/* Input */}
@@ -313,7 +396,7 @@ export default function PathfinderOnboarding({ username, backendUrl, onRoadmapRe
           value={inputVal}
           onChange={e => setInputVal(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder={QUESTIONS[currentQ]?.placeholder}
+          placeholder={activeQuestions[currentQ]?.placeholder}
           rows={3}
           style={{
             width: "100%", padding: "16px 20px",
@@ -339,13 +422,11 @@ export default function PathfinderOnboarding({ username, backendUrl, onRoadmapRe
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "20px" }}>
           <button
             onClick={handleBack}
-            disabled={currentQ === 0}
             style={{
               padding: "12px 24px", borderRadius: "12px",
               border: "1.5px solid #e2e8f0", background: "transparent",
               color: "var(--text-muted)", fontWeight: "700", fontSize: "14px",
-              cursor: currentQ === 0 ? "not-allowed" : "pointer",
-              opacity: currentQ === 0 ? 0.4 : 1, transition: "all 0.2s"
+              cursor: "pointer", transition: "all 0.2s"
             }}
           >
             ← Back
@@ -368,7 +449,7 @@ export default function PathfinderOnboarding({ username, backendUrl, onRoadmapRe
             onMouseOver={e => { if (inputVal.trim()) e.currentTarget.style.transform = "translateY(-1px)"; }}
             onMouseOut={e => { e.currentTarget.style.transform = "none"; }}
           >
-            {currentQ === QUESTIONS.length - 1 ? "🚀 Build My Roadmap" : "Continue →"}
+            {currentQ === activeQuestions.length - 1 ? "🚀 Build My Roadmap" : "Continue →"}
           </button>
         </div>
 
@@ -397,7 +478,7 @@ export default function PathfinderOnboarding({ username, backendUrl, onRoadmapRe
               </div>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: "11px", color: "var(--text-muted)", marginBottom: "2px" }}>
-                  {QUESTIONS[i].question}
+                  {activeQuestions[i].question}
                 </div>
                 <div style={{ fontSize: "13px", color: "var(--text-light)", fontWeight: "600" }}>
                   {ans}
@@ -418,6 +499,8 @@ export default function PathfinderOnboarding({ username, backendUrl, onRoadmapRe
             </div>
           ))}
         </div>
+      )}
+        </>
       )}
     </div>
   );

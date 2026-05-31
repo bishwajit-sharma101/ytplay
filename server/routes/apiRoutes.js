@@ -152,13 +152,13 @@ router.post("/personalized-feed", async (req, res) => {
 router.post("/pathfinder/generate", async (req, res) => {
   req.setTimeout(600000);
   res.setTimeout(600000);
-  const { answers } = req.body;
+  const { answers, pathfinderMode } = req.body;
   if (!answers || !Array.isArray(answers)) {
     return res.status(400).json({ error: "answers array required" });
   }
 
   try {
-    const roadmap = await generateRoadmapFromAnswers(answers);
+    const roadmap = await generateRoadmapFromAnswers(answers, pathfinderMode);
     res.json(roadmap);
   } catch (err) {
     console.error("[Pathfinder] Roadmap generation failed:", err.message);

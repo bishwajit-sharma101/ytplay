@@ -52,18 +52,105 @@ export default function Dashboard({
   const [activeTab, setActiveTab] = useState("duels");
   const [personalizedFeed, setPersonalizedFeed] = useState([]);
   const [loadingFeed, setLoadingFeed] = useState(false);
+  const [activeMilestones, setActiveMilestones] = useState([]);
+  const [todayVideos, setTodayVideos] = useState([]);
+  const [loadingToday, setLoadingToday] = useState(false);
+
+  useEffect(() => {
+    if (!username) return;
+    const saved = localStorage.getItem(`kaevrix_roadmap_progress_${username}`);
+    if (saved) {
+      try {
+        const roadmap = JSON.parse(saved);
+        let milestones = [];
+        if (roadmap.level1?.milestones?.some(m => m.status !== "completed")) {
+          milestones = roadmap.level1.milestones;
+        } else if (roadmap.level2?.milestones?.some(m => m.status !== "completed")) {
+          milestones = roadmap.level2.milestones;
+        } else if (roadmap.level3?.milestones?.some(m => m.status !== "completed")) {
+          milestones = roadmap.level3.milestones;
+        } else {
+          milestones = roadmap.level3?.milestones || [];
+        }
+        
+        // Only show completed and currently unlocked milestones, hide future locked ones
+        milestones = milestones.filter(m => m.status !== "locked");
+        
+        setActiveMilestones(milestones);
+      } catch (e) {
+        console.error("Failed to parse roadmap logic in Dashboard:", e);
+      }
+    }
+  }, [username, activeTab]);
 
   const selectedVideoRef = useRef(selectedVideo);
   useEffect(() => {
     selectedVideoRef.current = selectedVideo;
   }, [selectedVideo]);
 
-  // Load Pathfinder answers for query generation
+  // Load topic from actual AI-generated roadmap (avoids pasting user's raw prompt)
+  const roadmapKey = `kaevrix_roadmap_progress_${username}`;
+  const savedRoadmapStr = localStorage.getItem(roadmapKey);
+  const savedRoadmap = savedRoadmapStr ? JSON.parse(savedRoadmapStr) : null;
+  
+  // Load answers just as a fallback if no roadmap exists
   const answersKey = `kaevrix_roadmap_answers_${username}`;
   const savedAnswers = localStorage.getItem(answersKey);
   const answers = savedAnswers ? JSON.parse(savedAnswers) : null;
-  const topic = answers && answers[0] ? answers[0].answer : "";
-  const why = answers && answers[1] ? answers[1].answer : "";
+  
+  const topic = savedRoadmap?.topic || (answers && answers[0] ? answers[0].answer : "");
+  const why = savedRoadmap?.goal || (answers && answers[1] ? answers[1].answer : "");
+
+  // Get active subtopic from roadmap progression
+  const getActiveSubtopic = () => {
+    if (!activeMilestones || activeMilestones.length === 0) return null;
+    const activeMilestone = activeMilestones.find(m => m.status === "unlocked") || activeMilestones.find(m => m.status !== "completed");
+    if (!activeMilestone || activeMilestone.status === "completed") return null;
+    
+    const subtopicIdx = activeMilestone.subtopicIndex || 0;
+    const keyPoints = activeMilestone.keyPoints || [];
+    if (subtopicIdx < keyPoints.length) {
+      return {
+        milestoneTitle: activeMilestone.title,
+        subtopic: keyPoints[subtopicIdx]
+      };
+    }
+    return null;
+  };
+
+  const activeSubtopicObj = getActiveSubtopic();
+  const activeSubtopicStr = activeSubtopicObj ? activeSubtopicObj.subtopic : "";
+
+  // Fetch Recommended for Today videos
+  useEffect(() => {
+    if (!topic || !activeSubtopicStr || searchQuery) {
+      setTodayVideos([]);
+      return;
+    }
+
+    let isMounted = true;
+    const fetchTodayVideos = async () => {
+      setLoadingToday(true);
+      const query = `${topic} ${activeSubtopicStr} tutorial`;
+      try {
+        const res = await fetch(`${backendUrl}/api/search?q=${encodeURIComponent(query)}`);
+        if (res.ok && isMounted) {
+          const data = await res.json();
+          // Display up to 4 videos for today's objective
+          setTodayVideos(data.slice(0, 4));
+        }
+      } catch (err) {
+        console.error("Failed to fetch today's videos:", err);
+      } finally {
+        if (isMounted) setLoadingToday(false);
+      }
+    };
+
+    fetchTodayVideos();
+    return () => {
+      isMounted = false;
+    };
+  }, [topic, activeSubtopicStr, searchQuery, backendUrl]);
 
   // Helper to extract banner pills dynamically from active roadmap
   const getBannerPills = () => {
@@ -167,6 +254,75 @@ export default function Dashboard({
     setStatus("mode_selection");
   };
 
+  const getVideoCardStyle = (video) => ({
+    background: selectedVideo?.id === video.id 
+      ? (isDarkMode ? "rgba(255, 106, 0, 0.08)" : "#fff7ed") 
+      : (isDarkMode ? "#1e293b" : "#ffffff"),
+    border: selectedVideo?.id === video.id 
+      ? "2px solid #ff6a00" 
+      : (isDarkMode ? "1px solid rgba(255,255,255,0.08)" : "1px solid #e2e8f0"),
+    borderRadius: "18px",
+    overflow: "hidden",
+    cursor: "pointer",
+    transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+    boxShadow: selectedVideo?.id === video.id 
+      ? "0 10px 30px rgba(255,106,0,0.2)" 
+      : "0 2px 8px rgba(0,0,0,0.06)",
+    transform: selectedVideo?.id === video.id ? "translateY(-4px)" : "none",
+    display: "flex", flexDirection: "column",
+  });
+
+  const renderVideoCardContent = (video, defaultCategory) => {
+    const category = video.category || defaultCategory || "Training";
+    const catStyle = getCategoryStyle(category);
+    return (
+      <>
+        {/* 16:9 Thumbnail */}
+        <div style={{ position: "relative", width: "100%", paddingTop: "56.25%", background: "#000", overflow: "hidden" }}>
+          <img
+            src={video.thumbnail}
+            alt={video.title}
+            style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", objectFit: "cover", opacity: 0.92 }}
+          />
+          {/* Gradient overlay */}
+          <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 55%)" }} />
+
+          {/* LIVE badge */}
+          <div style={{ position: "absolute", top: "10px", left: "10px", background: "#ef4444", color: "#fff", padding: "3px 8px", borderRadius: "6px", fontSize: "10px", fontWeight: "900", display: "flex", alignItems: "center", gap: "5px" }}>
+            <span style={{ width: "5px", height: "5px", borderRadius: "50%", background: "#fff", animation: "pulse 1.5s infinite" }} />
+            LIVE
+          </div>
+
+          {/* Queue count */}
+          <div style={{ position: "absolute", top: "10px", right: "10px", background: "rgba(0,0,0,0.55)", backdropFilter: "blur(6px)", color: "#fff", padding: "3px 8px", borderRadius: "6px", fontSize: "10px", fontWeight: "800", border: "1px solid rgba(255,255,255,0.12)" }}>
+            👁️ {Math.floor((video.id || "0").charCodeAt(0) * 3.7) + 120} queuing
+          </div>
+
+          {/* Duration */}
+          <span style={{ position: "absolute", bottom: "10px", right: "10px", background: "rgba(0,0,0,0.7)", color: "#fff", padding: "3px 7px", borderRadius: "5px", fontSize: "11px", fontWeight: "700" }}>
+            {Math.floor((video.duration || 300) / 60)}:{String((video.duration || 300) % 60).padStart(2, '0')}
+          </span>
+        </div>
+
+        {/* Card Info */}
+        <div style={{ padding: "18px", flex: 1, display: "flex", flexDirection: "column" }}>
+          {/* Tags */}
+          <div style={{ display: "flex", gap: "6px", marginBottom: "10px", flexWrap: "wrap" }}>
+            <span style={{ fontSize: "10px", fontWeight: "800", color: catStyle.color, background: catStyle.bg, padding: "3px 8px", borderRadius: "5px", textTransform: "uppercase" }}>{category}</span>
+            <span style={{ fontSize: "10px", fontWeight: "800", color: "#4338ca", background: "#e0e7ff", padding: "3px 8px", borderRadius: "5px", textTransform: "uppercase" }}>TRENDING</span>
+          </div>
+
+          <h4 style={{ fontSize: "15px", fontWeight: "800", color: "var(--text-light)", marginBottom: "6px", display: "-webkit-box", WebkitLineClamp: "2", WebkitBoxOrient: "vertical", overflow: "hidden", lineHeight: "1.4" }}>
+            {video.title}
+          </h4>
+          <p style={{ fontSize: "13px", color: "var(--text-muted)", marginBottom: "14px", display: "flex", alignItems: "center", gap: "5px", fontWeight: "600" }}>
+            📺 {video.channel}
+          </p>
+        </div>
+      </>
+    );
+  };
+
   const navItems = [
     { id: "profile", icon: "👤", label: "Profile" },
     { id: "duels", icon: "🎮", label: "Duel Arena" },
@@ -176,7 +332,7 @@ export default function Dashboard({
   ];
 
   return (
-    <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "40px 20px", display: "flex", gap: "28px", alignItems: "flex-start" }}>
+    <div style={{ width: "100%", maxWidth: "1400px", margin: "0 auto", padding: "40px 0", display: "flex", gap: "28px", alignItems: "flex-start" }}>
 
       {/* Sidebar Navigation */}
       <div style={{ width: "220px", display: "flex", flexDirection: "column", gap: "6px", flexShrink: 0, position: "sticky", top: "20px" }}>
@@ -272,12 +428,8 @@ export default function Dashboard({
                       </>
                     )}
                   </h1>
-                  <p style={{ color: isDarkMode ? "rgba(255,255,255,0.6)" : "#475569", fontSize: "16px", maxWidth: "500px", lineHeight: "1.6" }}>
-                    {topic ? (
-                      `A structured training ground tailored to your goal of "${why || "learning " + topic}". Face off in duels or enter the solo study theatre.`
-                    ) : (
-                      "Select a video, enter matchmaking, and face off against a real opponent. The AI generates your quiz from the video content."
-                    )}
+                  <p style={{ fontSize: "16px", color: "var(--text-muted)", lineHeight: "1.6", maxWidth: "600px", marginBottom: "32px" }}>
+                    {savedRoadmap?.summary ? savedRoadmap.summary : why ? `A structured training ground tailored to your goal of "${why}". Face off in duels or enter the solo study theatre.` : "Engage in competitive 1v1 duels or train solo in the dedicated theatre to master new technologies."}
                   </p>
 
                   {/* Trending Topics / Roadmap Milestones Pills */}
@@ -371,10 +523,10 @@ export default function Dashboard({
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "20px" }}>
               <div>
                 <h2 style={{ fontSize: "22px", fontWeight: "800", color: "var(--text-light)", marginBottom: "4px" }}>
-                  {searchQuery ? `Results for "${searchQuery}"` : (topic ? `✨ Recommended for You` : "🎯 Featured Training Videos")}
+                  {searchQuery ? `Results for "${searchQuery}"` : (topic ? `✨ Curated Learning Arena` : "🎯 Featured Training Videos")}
                 </h2>
                 <p style={{ color: "var(--text-muted)", fontSize: "14px" }}>
-                  {isSearching || loadingFeed ? "Scanning the learning grid..." : (searchQuery ? `${searchResults?.length || 0} videos found` : (topic ? `Your personalized YouTube recommendations grid based on Pathfinder goals.` : "Hand-picked educational content — AI quizzes generated from each video"))}
+                  {isSearching || loadingFeed || loadingToday ? "Scanning the learning grid..." : (searchQuery ? `${searchResults?.length || 0} videos found` : (topic ? `Your specialized recommendation feeds aligned to your learning roadmap objectives.` : "Hand-picked educational content — AI quizzes generated from each video"))}
                 </p>
               </div>
               {searchQuery && (
@@ -385,7 +537,7 @@ export default function Dashboard({
             </div>
 
             {/* Videos Grid — standard 16:9 cards OR game loading animation */}
-            {isSearching || loadingFeed ? (
+            {isSearching || loadingFeed || loadingToday ? (
               <div style={{
                 display: "flex",
                 flexDirection: "column",
@@ -530,85 +682,102 @@ export default function Dashboard({
                   }} />
                 </div>
               </div>
-            ) : (
+            ) : searchQuery ? (
+              // Search results mode
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "24px" }}>
-                {(() => {
-                  if (searchQuery) {
-                    return searchResults || [];
-                  }
-                  if (topic && Array.isArray(personalizedFeed) && personalizedFeed.length > 0) {
-                    return personalizedFeed;
-                  }
-                  return curatedVideos;
-                })().map((video) => {
-                  const catStyle = getCategoryStyle(video.category);
-                  return (
-                    <div
-                      key={video.id}
-                      onClick={() => handleSelectVideo(video)}
-                      style={{
-                        background: selectedVideo?.id === video.id 
-                          ? (isDarkMode ? "rgba(255, 106, 0, 0.08)" : "#fff7ed") 
-                          : (isDarkMode ? "#1e293b" : "#ffffff"),
-                        border: selectedVideo?.id === video.id 
-                          ? "2px solid #ff6a00" 
-                          : (isDarkMode ? "1px solid rgba(255,255,255,0.08)" : "1px solid #e2e8f0"),
-                        borderRadius: "18px",
-                        overflow: "hidden",
-                        cursor: "pointer",
-                        transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-                        boxShadow: selectedVideo?.id === video.id 
-                          ? "0 10px 30px rgba(255,106,0,0.2)" 
-                          : "0 2px 8px rgba(0,0,0,0.06)",
-                        transform: selectedVideo?.id === video.id ? "translateY(-4px)" : "none",
-                        display: "flex", flexDirection: "column",
-                      }}
-                    >
-                      {/* 16:9 Thumbnail */}
-                      <div style={{ position: "relative", width: "100%", paddingTop: "56.25%", background: "#000", overflow: "hidden" }}>
-                        <img
-                          src={video.thumbnail}
-                          alt={video.title}
-                          style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", objectFit: "cover", opacity: 0.92 }}
-                        />
-                        {/* Gradient overlay */}
-                        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 55%)" }} />
-  
-                        {/* LIVE badge */}
-                        <div style={{ position: "absolute", top: "10px", left: "10px", background: "#ef4444", color: "#fff", padding: "3px 8px", borderRadius: "6px", fontSize: "10px", fontWeight: "900", display: "flex", alignItems: "center", gap: "5px" }}>
-                          <span style={{ width: "5px", height: "5px", borderRadius: "50%", background: "#fff", animation: "pulse 1.5s infinite" }} />
-                          LIVE
+                {(searchResults || []).map((video) => (
+                  <div
+                    key={video.id}
+                    onClick={() => handleSelectVideo(video)}
+                    style={getVideoCardStyle(video)}
+                  >
+                    {renderVideoCardContent(video)}
+                  </div>
+                ))}
+              </div>
+            ) : topic ? (
+              // Split Feeds: Recommended for Today & Explore
+              <div style={{ display: "flex", flexDirection: "column", gap: "44px" }}>
+                {/* 1. Recommended for Today */}
+                <div>
+                  <div style={{ marginBottom: "18px", borderBottom: isDarkMode ? "1px solid rgba(255,255,255,0.06)" : "1px solid #f1f5f9", paddingBottom: "10px" }}>
+                    <h3 style={{ fontSize: "18px", fontWeight: "900", color: "var(--text-light)", display: "flex", alignItems: "center", gap: "10px" }}>
+                      📅 Recommended for Today
+                      <span style={{ fontSize: "10px", fontWeight: "800", color: "#10b981", background: "rgba(16,185,129,0.12)", padding: "4px 10px", borderRadius: "6px", textTransform: "uppercase", letterSpacing: "0.5px" }}>TODAY'S OBJECTIVE</span>
+                    </h3>
+                    <p style={{ color: "var(--text-muted)", fontSize: "13.5px", marginTop: "4px", lineHeight: "1.4" }}>
+                      {activeSubtopicObj ? (
+                        <>
+                          Targeting: <strong style={{ color: "var(--neon-orange)" }}>{activeSubtopicObj.subtopic}</strong> (from milestone <em>{activeSubtopicObj.milestoneTitle}</em>)
+                        </>
+                      ) : (
+                        "No active objectives. Set a milestone in Pathfinder to get today's recommendations!"
+                      )}
+                    </p>
+                  </div>
+                  
+                  {todayVideos.length > 0 ? (
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "24px" }}>
+                      {todayVideos.map((video) => (
+                        <div
+                          key={video.id}
+                          onClick={() => handleSelectVideo(video)}
+                          style={getVideoCardStyle(video)}
+                        >
+                          {renderVideoCardContent(video, "Core Tutorial")}
                         </div>
-  
-                        {/* Queue count */}
-                        <div style={{ position: "absolute", top: "10px", right: "10px", background: "rgba(0,0,0,0.55)", backdropFilter: "blur(6px)", color: "#fff", padding: "3px 8px", borderRadius: "6px", fontSize: "10px", fontWeight: "800", border: "1px solid rgba(255,255,255,0.12)" }}>
-                          👁️ {Math.floor(video.id.charCodeAt(0) * 3.7) + 120} queuing
-                        </div>
-  
-                        {/* Duration */}
-                        <span style={{ position: "absolute", bottom: "10px", right: "10px", background: "rgba(0,0,0,0.7)", color: "#fff", padding: "3px 7px", borderRadius: "5px", fontSize: "11px", fontWeight: "700" }}>
-                          {Math.floor(video.duration / 60)}:{String(video.duration % 60).padStart(2, '0')}
-                        </span>
-                      </div>
-  
-                      {/* Card Info */}
-                      <div style={{ padding: "18px", flex: 1, display: "flex", flexDirection: "column" }}>
-                        {/* Tags */}
-                        <div style={{ display: "flex", gap: "6px", marginBottom: "10px", flexWrap: "wrap" }}>
-                          <span style={{ fontSize: "10px", fontWeight: "800", color: catStyle.color, background: catStyle.bg, padding: "3px 8px", borderRadius: "5px", textTransform: "uppercase" }}>{video.category || "Training"}</span>
-                          <span style={{ fontSize: "10px", fontWeight: "800", color: "#4338ca", background: "#e0e7ff", padding: "3px 8px", borderRadius: "5px", textTransform: "uppercase" }}>TRENDING</span>
-                        </div>
-  
-                        <h4 style={{ fontSize: "15px", fontWeight: "800", color: "var(--text-light)", marginBottom: "6px", display: "-webkit-box", WebkitLineClamp: "2", WebkitBoxOrient: "vertical", overflow: "hidden", lineHeight: "1.4" }}>
-                          {video.title}
-                        </h4>
-                        <p style={{ fontSize: "13px", color: "var(--text-muted)", marginBottom: "14px", display: "flex", alignItems: "center", gap: "5px", fontWeight: "600" }}>
-                          📺 {video.channel}
-                        </p>
-                      </div>
+                      ))}
                     </div>
-                  );
-                })}
+                  ) : (
+                    <div style={{ padding: "32px", textAlign: "center", background: isDarkMode ? "rgba(255,255,255,0.02)" : "#f8fafc", borderRadius: "16px", border: "1px dashed var(--glass-border)", color: "var(--text-muted)", fontSize: "14px" }}>
+                      {activeSubtopicObj ? "Finding best tutorials for today's objective..." : "Initialize Pathfinder to get custom daily objectives."}
+                    </div>
+                  )}
+                </div>
+
+                {/* 2. Explore Feed */}
+                <div>
+                  <div style={{ marginBottom: "18px", borderBottom: isDarkMode ? "1px solid rgba(255,255,255,0.06)" : "1px solid #f1f5f9", paddingBottom: "10px" }}>
+                    <h3 style={{ fontSize: "18px", fontWeight: "900", color: "var(--text-light)", display: "flex", alignItems: "center", gap: "10px" }}>
+                      🧭 Explore Learning Path
+                      <span style={{ fontSize: "10px", fontWeight: "800", color: "#3b82f6", background: "rgba(59, 130, 246, 0.12)", padding: "4px 10px", borderRadius: "6px", textTransform: "uppercase", letterSpacing: "0.5px" }}>BROADER GOALS</span>
+                    </h3>
+                    <p style={{ color: "var(--text-muted)", fontSize: "13.5px", marginTop: "4px" }}>
+                      Broader training videos based on your goal of: <strong style={{ color: "#3b82f6" }}>{why || topic}</strong>
+                    </p>
+                  </div>
+
+                  {personalizedFeed.length > 0 ? (
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "24px" }}>
+                      {personalizedFeed.map((video) => (
+                        <div
+                          key={video.id}
+                          onClick={() => handleSelectVideo(video)}
+                          style={getVideoCardStyle(video)}
+                        >
+                          {renderVideoCardContent(video)}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div style={{ padding: "32px", textAlign: "center", background: isDarkMode ? "rgba(255,255,255,0.02)" : "#f8fafc", borderRadius: "16px", border: "1px dashed var(--glass-border)", color: "var(--text-muted)", fontSize: "14px" }}>
+                      No recommendations found. Try adjusting your Pathfinder goals.
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : (
+              // Curated Fallbacks
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "24px" }}>
+                {(curatedVideos || []).map((video) => (
+                  <div
+                    key={video.id}
+                    onClick={() => handleSelectVideo(video)}
+                    style={getVideoCardStyle(video)}
+                  >
+                    {renderVideoCardContent(video)}
+                  </div>
+                ))}
               </div>
             )}
 
@@ -624,7 +793,7 @@ export default function Dashboard({
                     <div key={player.username} style={{ display: "flex", alignItems: "center", gap: "14px", padding: "14px 18px", background: player.username?.toLowerCase() === username?.toLowerCase() ? "#fff7ed" : "#f8fafc", borderRadius: "12px", border: player.username?.toLowerCase() === username?.toLowerCase() ? "2px solid #ff6a00" : "1px solid #e2e8f0" }}>
                       <span style={{ width: "28px", textAlign: "center", fontWeight: "900", fontSize: "18px", color: idx === 0 ? "#f59e0b" : idx === 1 ? "#94a3b8" : idx === 2 ? "#b45309" : "#cbd5e1" }}>#{idx + 1}</span>
                       <div style={{ width: "38px", height: "38px", borderRadius: "50%", background: "linear-gradient(135deg, #ff6a00, #ffb300)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px", overflow: "hidden" }}>
-                        {player.avatar ? (player.avatar.includes("http") ? <img src={player.avatar} alt="av" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : player.avatar) : "👤"}
+                        {player.avatar ? (player.avatar.includes('http') ? <img src={player.avatar} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : player.avatar) : "👤"}
                       </div>
                       <div style={{ flex: 1 }}>
                         <div style={{ fontWeight: "700", fontSize: "15px", color: "var(--text-light)" }}>{player.username}</div>
@@ -708,6 +877,81 @@ export default function Dashboard({
           </div>
         )}
       </div>
+
+      {/* Right Sidebar: Pathfinder To-Do List */}
+      {activeTab === "duels" && (
+        <div style={{ width: "280px", display: "flex", flexDirection: "column", gap: "16px", flexShrink: 0, position: "sticky", top: "20px" }}>
+          <div style={{ background: isDarkMode ? "linear-gradient(135deg, #1e1b4b, #0f172a)" : "linear-gradient(135deg, #fffaf5, #ffedd5)", borderRadius: "16px", padding: "20px", border: isDarkMode ? "1px solid rgba(255,106,0,0.2)" : "1px solid #fed7aa", boxShadow: "0 4px 15px rgba(255,106,0,0.05)" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "16px" }}>
+              <span style={{ fontSize: "18px" }}>🧠</span>
+              <span style={{ fontSize: "12px", fontWeight: "800", color: "#ea580c", textTransform: "uppercase", letterSpacing: "1px" }}>Active Directives</span>
+            </div>
+            
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px", maxHeight: "60vh", overflowY: "auto", paddingRight: "4px" }} className="custom-scrollbar">
+              {activeMilestones.length > 0 ? (
+                activeMilestones.map(m => {
+                  const isMilestoneDone = m.status === "completed";
+                  const subtopicIndex = m.subtopicIndex || 0;
+                  
+                  return (
+                    <div key={m.id} style={{ marginBottom: "12px" }}>
+                      <div style={{
+                        fontSize: "13px", fontWeight: "900", color: isDarkMode ? "#e2e8f0" : "#1e293b",
+                        marginBottom: "8px", borderBottom: isDarkMode ? "1px solid rgba(255,255,255,0.1)" : "1px solid #fed7aa",
+                        paddingBottom: "4px"
+                      }}>
+                        {m.title}
+                      </div>
+                      
+                      {m.keyPoints?.map((pt, i) => {
+                        const isDone = isMilestoneDone || i < subtopicIndex;
+                        
+                        return (
+                          <div key={i} style={{
+                            display: "flex", alignItems: "flex-start", gap: "10px",
+                            opacity: isDone ? 0.5 : 1,
+                            background: isDone ? "transparent" : (isDarkMode ? "rgba(255,255,255,0.05)" : "#fff"),
+                            border: isDone ? "1px dashed transparent" : (isDarkMode ? "1px solid rgba(255,255,255,0.1)" : "1px solid #fed7aa"),
+                            padding: isDone ? "4px 8px" : "10px",
+                            borderRadius: "8px",
+                            marginBottom: "6px",
+                            transition: "all 0.3s",
+                            boxShadow: isDone || isDarkMode ? "none" : "0 2px 5px rgba(0,0,0,0.03)"
+                          }}>
+                            <div style={{
+                              marginTop: isDone ? "0px" : "2px",
+                              color: isDone ? "#10b981" : "#ea580c",
+                              fontSize: "12px",
+                              flexShrink: 0
+                            }}>
+                              {isDone ? "✅" : "🔲"}
+                            </div>
+                            <div style={{ flex: 1 }}>
+                              <div style={{ 
+                                fontSize: "12px", 
+                                fontWeight: isDone ? "500" : "700", 
+                                color: isDone ? "var(--text-muted)" : (isDarkMode ? "#e2e8f0" : "#1e293b"),
+                                textDecoration: isDone ? "line-through" : "none",
+                                lineHeight: "1.4"
+                              }}>
+                                {pt}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })
+              ) : (
+                <div style={{ fontSize: "13px", color: "var(--text-muted)", fontStyle: "italic", textAlign: "center", padding: "20px 0" }}>
+                  No active directives. Go to the Pathfinder tab to generate a roadmap!
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

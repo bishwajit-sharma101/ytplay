@@ -11,7 +11,7 @@ async function ollamaGenerate(prompt, format = "json") {
     model: OLLAMA_MODEL,
     prompt,
     stream: false,
-    options: { temperature: 0.7, num_predict: 4096, num_ctx: 8192 }
+    options: { temperature: 0.7, num_predict: -1, num_ctx: 16384 }
   };
   if (format === "json") body.format = "json";
 
@@ -201,31 +201,32 @@ function buildFallbackRoadmap(topic, goal) {
  * Generates a personalized 3-level learning roadmap using Ollama gemma4:e4b or Gemini API.
  * Falls back to template if Ollama is unavailable.
  */
-export async function generateRoadmapFromAnswers(answers) {
+export async function generateRoadmapFromAnswers(answers, pathfinderMode) {
   const qa = answers.map(a => `Q: ${a.question}\nA: ${a.answer}`).join("\n\n");
   const userTopic = answers[0]?.answer || "General Learning";
   const userGoal = answers[1]?.answer || "";
-  const userReason = answers.find(a => a.question.toLowerCase().includes("why"))?.answer || "learning";
+  const userReason = pathfinderMode === 'detailed' ? (answers.find(a => a.question.toLowerCase().includes("dream"))?.answer || "achieve their dream outcome") : (answers.find(a => a.question.toLowerCase().includes("why"))?.answer || "learning");
 
   const prompt = `You are an expert learning path designer for the Kaevrix educational gaming platform.
-A user has completed an onboarding interview. Based on their answers, generate a highly personalized, detailed 3-level learning roadmap focusing EXCLUSIVELY on teaching the BASICS / FOUNDATIONS of the topic "${userTopic}" extremely well.
+A user has completed an onboarding interview. Based on their answers, generate a highly personalized, detailed 3-level learning roadmap.
+${pathfinderMode === 'detailed' ? 'This is a DEEP-DIVE mode interview. You must carefully analyze their specific problems, history, and constraints. Ensure the roadmap is incredibly comprehensive, leaving absolutely no topic out, so they feel fully confident and capable of achieving their dream outcome by the end of Level 3.' : 'Focus EXCLUSIVELY on teaching the BASICS / FOUNDATIONS of the topic extremely well.'}
 
 USER INTERVIEW:
 ${qa}
 
 CRITICAL REQUIREMENT:
-The generated roadmap MUST cover only the basic, fundamental aspects of "${userTopic}" in extreme, granular detail.
-Do NOT include advanced topics like system architecture, complex scaling, advanced design patterns, or highly specialized production techniques. Focus on building a rock-solid, deep understanding of the basics.
-Tailor the details (especially Level 3) to the user's specific reason for learning: "${userReason}" and their goals. For example, if their reason is a "job", include common entry-level interview questions and core concepts asked in tests. If it is for a "project", include practical foundations.
+1. The generated roadmap MUST cover the fundamental aspects of the topic in extreme, granular detail. Ensure that no essential topic is left out, guaranteeing a complete learning journey.
+2. The 3 levels must be logically connected, starting from absolute basics (Level 1) to intermediate foundations (Level 2), and finally practical application/tests (Level 3), guaranteeing they achieve their goal: "${userReason}".
+3. EXACTLY 12 MILESTONES PER LEVEL: Each level must contain exactly 12 nodes. Node 12 of every level MUST be a comprehensive test, quiz, or practical capstone project verifying the skills of that level.
 
 Generate a JSON roadmap with this EXACT structure:
 {
   "topic": "short specific topic name (2-4 words)",
   "goal": "one sentence summarizing what they want to achieve",
-  "summary": "2-3 sentences describing why this roadmap is tailored for them, focusing on mastering the basics for their goal",
-  "totalVideosEstimated": 36, // estimated total YouTube videos to watch for this entire roadmap (integer, e.g. 30-45)
-  "totalEstimatedHours": 25, // estimated total hours of studying and watching to complete the whole roadmap (integer)
-  "dailyGoal": "e.g. Complete 1 node daily", // clear daily action quest
+  "summary": "2-3 sentences describing why this roadmap is tailored for them",
+  "totalVideosEstimated": 36,
+  "totalEstimatedHours": 25,
+  "dailyGoal": "e.g. Complete 1 node daily",
   "level1": {
     "title": "Level 1 — Foundations",
     "subtitle": "Essential Basics & Core Concepts",
@@ -234,9 +235,9 @@ Generate a JSON roadmap with this EXACT structure:
       {
         "id": "1-0",
         "title": "specific basic sub-topic title",
-        "description": "2-3 sentences describing what this covers, why it matters, and common pitfalls/questions asked in relation to it",
-        "searchQuery": "YouTube search query to find the best educational video or tutorial for this milestone",
-        "keyPoints": ["point 1", "point 2", "point 3", "point 4"],
+        "description": "2-3 sentences describing what this covers and why it matters",
+        "searchQuery": "Highly specific YouTube search query (e.g., '${userTopic} specific sub-topic tutorial', DO NOT use generic queries like 'Learn ${userTopic}')",
+        "keyPoints": ["Specific concept 1", "Specific concept 2", "Specific concept 3", "Specific concept 4"],
         "estimatedMinutes": 40,
         "status": "unlocked",
         "xpReward": 30,
@@ -248,26 +249,23 @@ Generate a JSON roadmap with this EXACT structure:
     "title": "Level 2 — Core Operations & Logic",
     "subtitle": "Intermediate Foundations & Structural Concepts",
     "color": "#f59e0b",
-    "milestones": [/* same structure, status: "locked", xpReward: 50-70 */]
+    "milestones": [/* same structure, 12 milestones, status: "locked" */]
   },
   "level3": {
     "title": "Level 3 — Basic Applications & Preparation",
     "subtitle": "Foundational practice, common questions and practical tasks",
     "color": "#8b5cf6",
-    "milestones": [/* same structure, status: "locked", xpReward: 80-100 */]
+    "milestones": [/* same structure, 12 milestones, status: "locked" */]
   }
 }
 
 Rules:
-- Each of the three levels MUST contain EXACTLY 10 to 15 milestones (do not generate fewer than 10 milestones per level under any circumstances). A detailed, granular roadmap of 30-45 milestones/nodes total is required.
-- Do not limit the roadmap to a high-level overview. Provide granular, distinct milestones for specific sub-topics. Split different foundational building blocks into separate, dedicated milestones to teach them really well.
-- Ensure each milestone/node represents a very small, focused, singular sub-topic (e.g. "let vs const variable scopes" instead of "Variables and Data Types") so that it is easily digestible.
-- Level 1 milestone 0 must have status "unlocked", all others "locked"
-- Milestones must be highly specific to the actual topic basics and goal — NOT generic templates
-- searchQuery should return real, relevant YouTube search queries (e.g., "[topic] [milestone title] tutorial")
-- keyPoints should be actionable and specific to the milestone sub-topic
-- estimatedMinutes: 30-120 based on depth
-- Be extremely detailed, practical, and tailored to the topic "${userTopic}"
+- You MUST generate EXACTLY 12 milestones per level (36 milestones total).
+- The 12th milestone of each level must be a Test or Capstone Project.
+- Do NOT hardcode generic keyPoints like "Understand core concepts". You must generate highly specific, dynamic subtopics for the keyPoints based on the milestone (e.g., if milestone is 'Variables', keyPoints could be 'let vs const', 'block scope', 'memory allocation').
+- Ensure searchQuery is highly specific so the user gets relevant YouTube videos for that exact subtopic.
+- Level 1 milestone 0 must have status "unlocked", all others "locked".
+- Be extremely detailed, practical, and tailored to the topic "${userTopic}".
 
 Return ONLY valid JSON, no markdown.`;
 

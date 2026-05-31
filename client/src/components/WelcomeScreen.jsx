@@ -33,7 +33,7 @@ const CLASS_STATS = {
   gachaaddict: { focus: 35, speed: 55, disruption: 60, defense: 40, chaos: 99 }
 };
 
-const PATHFINDER_QUESTIONS = [
+const QUICK_QUESTIONS = [
   {
     id: "topic",
     question: "What do you want to learn?",
@@ -63,6 +63,39 @@ const PATHFINDER_QUESTIONS = [
     question: "What does success look like in 3 months?",
     hint: "A working project? Passing an interview? Freelance client?",
     placeholder: "In 3 months I want to..."
+  }
+];
+
+const DETAILED_QUESTIONS = [
+  {
+    id: "problem",
+    question: "What exactly are you trying to achieve, and what problem is driving you?",
+    hint: "Tell me the specific reason or frustration pushing you to learn this right now.",
+    placeholder: "I want to achieve... because I am currently facing..."
+  },
+  {
+    id: "history",
+    question: "What have you tried so far, and where did you get stuck?",
+    hint: "Did you watch videos? Read books? What confused or frustrated you the most?",
+    placeholder: "So far I have tried... and I usually get stuck when..."
+  },
+  {
+    id: "dream",
+    question: "What is your ultimate 'dream outcome' if you master this?",
+    hint: "How would this change your day-to-day life, career, or personal satisfaction?",
+    placeholder: "My dream outcome is..."
+  },
+  {
+    id: "constraints",
+    question: "What are your biggest distractions or time constraints?",
+    hint: "Be honest. Social media? Work? Procrastination? How much time can you really commit?",
+    placeholder: "My biggest distraction is... I can realistically commit..."
+  },
+  {
+    id: "style",
+    question: "How do you learn best?",
+    hint: "Visual examples? Building projects? Reading docs? Let the AI know your style.",
+    placeholder: "I learn best when..."
   }
 ];
 
@@ -133,6 +166,10 @@ export default function WelcomeScreen({
   const [selectedClassId, setSelectedClassId] = useState(
     () => localStorage.getItem("kaevrix_class") || "doomscroller"
   );
+  
+  const [pathfinderMode, setPathfinderMode] = useState(null); // 'quick' or 'detailed'
+  const activeQuestions = pathfinderMode === 'detailed' ? DETAILED_QUESTIONS : QUICK_QUESTIONS;
+  
   const [onboardingQ, setOnboardingQ] = useState(0);
   const [onboardingAnswers, setOnboardingAnswers] = useState(Array(5).fill(""));
   const [onboardingInputVal, setOnboardingInputVal] = useState("");
@@ -140,8 +177,8 @@ export default function WelcomeScreen({
   const [isTypingQuestion, setIsTypingQuestion] = useState(false);
 
   useEffect(() => {
-    if (authMode !== "signup" || signUpStep !== 2) return;
-    const qText = PATHFINDER_QUESTIONS[onboardingQ]?.question || "";
+    if (authMode !== "signup" || signUpStep !== 2 || !pathfinderMode) return;
+    const qText = activeQuestions[onboardingQ]?.question || "";
     setTypedQuestion("");
     setIsTypingQuestion(true);
     let i = 0;
@@ -176,7 +213,9 @@ export default function WelcomeScreen({
 
   const handleQuestionBack = () => {
     sound.playClockTick();
-    if (onboardingQ > 0) {
+    if (pathfinderMode && onboardingQ === 0) {
+      setPathfinderMode(null);
+    } else if (onboardingQ > 0) {
       const prevQ = onboardingQ - 1;
       setOnboardingQ(prevQ);
       setOnboardingInputVal(onboardingAnswers[prevQ] || "");
@@ -384,7 +423,7 @@ export default function WelcomeScreen({
     }
 
     try {
-      const payload = PATHFINDER_QUESTIONS.map((q, i) => ({
+      const payload = activeQuestions.map((q, i) => ({
         question: q.question,
         answer: onboardingAnswers[i]
       }));
@@ -392,7 +431,7 @@ export default function WelcomeScreen({
       const res = await fetch(`${BACKEND_URL}/api/pathfinder/generate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ answers: payload })
+        body: JSON.stringify({ answers: payload, pathfinderMode })
       });
 
       const roadmap = await res.json();
@@ -1061,7 +1100,66 @@ export default function WelcomeScreen({
 
 
             {/* ─── SIGN UP STEP 2 — PATHFINDER QUESTIONS ─── */}
-            {authMode === "signup" && signUpStep === 2 && (
+            {authMode === "signup" && signUpStep === 2 && !pathfinderMode && (
+              <div style={{ display: "flex", flexDirection: "column", gap: "0" }}>
+                <button
+                  onClick={() => { sound.playClockTick(); setSignUpStep(1); }}
+                  style={{ background: "transparent", border: "none", color: textMuted, cursor: "pointer", fontSize: "12px", fontWeight: "700", textAlign: "left", padding: "0 0 20px 0", letterSpacing: "1px" }}
+                >
+                  ← BACK
+                </button>
+                <div style={{ marginBottom: "20px" }}>
+                  <div style={{ fontFamily: "var(--font-gamer)", fontSize: "20px", fontWeight: "900", letterSpacing: "2px", color: textColor, textTransform: "uppercase" }}>
+                    Select Pathfinder Mode
+                  </div>
+                  <div style={{ fontSize: "12px", color: textMuted, marginTop: "8px" }}>
+                    Choose how you want to build your learning roadmap.
+                  </div>
+                </div>
+                
+                <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                  <button
+                    onClick={() => { sound.playClockTick(); setPathfinderMode("quick"); setOnboardingQ(0); setOnboardingInputVal(""); }}
+                    style={{
+                      background: isDarkMode ? `${currentThemeColor}11` : `${currentThemeColor}0a`,
+                      border: `1.5px solid ${currentThemeColor}44`,
+                      borderRadius: "16px", padding: "20px",
+                      textAlign: "left", cursor: "pointer", transition: "all 0.2s"
+                    }}
+                    onMouseOver={e => e.currentTarget.style.transform = "translateY(-2px)"}
+                    onMouseOut={e => e.currentTarget.style.transform = "none"}
+                  >
+                    <div style={{ fontSize: "16px", fontWeight: "900", color: currentThemeColor, marginBottom: "4px", display: "flex", alignItems: "center", gap: "8px" }}>
+                      <span>⚡</span> Quick Setup
+                    </div>
+                    <div style={{ fontSize: "12px", color: textMuted, lineHeight: "1.5" }}>
+                      Standard 5 questions to build your path quickly. Ideal for straightforward topics.
+                    </div>
+                  </button>
+
+                  <button
+                    onClick={() => { sound.playClockTick(); setPathfinderMode("detailed"); setOnboardingQ(0); setOnboardingInputVal(""); }}
+                    style={{
+                      background: isDarkMode ? `${currentThemeColor}11` : `${currentThemeColor}0a`,
+                      border: `1.5px solid ${currentThemeColor}44`,
+                      borderRadius: "16px", padding: "20px",
+                      textAlign: "left", cursor: "pointer", transition: "all 0.2s"
+                    }}
+                    onMouseOver={e => e.currentTarget.style.transform = "translateY(-2px)"}
+                    onMouseOut={e => e.currentTarget.style.transform = "none"}
+                  >
+                    <div style={{ fontSize: "16px", fontWeight: "900", color: currentThemeColor, marginBottom: "4px", display: "flex", alignItems: "center", gap: "8px" }}>
+                      <span>🧠</span> Deep Dive
+                    </div>
+                    <div style={{ fontSize: "12px", color: textMuted, lineHeight: "1.5" }}>
+                      Open-ended questions about your problems, goals, and learning style for a highly tailored AI roadmap.
+                    </div>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {authMode === "signup" && signUpStep === 2 && pathfinderMode && (
               <div style={{ display: "flex", flexDirection: "column", gap: "0" }}>
                 <button
                   onClick={handleQuestionBack}
@@ -1097,14 +1195,14 @@ export default function WelcomeScreen({
                     )}
                   </h2>
                   <p style={{ color: textMuted, fontSize: "12px", marginBottom: "18px", lineHeight: "1.5" }}>
-                    💡 {PATHFINDER_QUESTIONS[onboardingQ]?.hint}
+                    💡 {activeQuestions[onboardingQ]?.hint}
                   </p>
 
                   <textarea
                     value={onboardingInputVal}
                     onChange={e => setOnboardingInputVal(e.target.value)}
                     onKeyDown={handleQuestionKeyDown}
-                    placeholder={PATHFINDER_QUESTIONS[onboardingQ]?.placeholder}
+                    placeholder={activeQuestions[onboardingQ]?.placeholder}
                     rows={3}
                     style={{
                       width: "100%", background: isDarkMode ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.03)",

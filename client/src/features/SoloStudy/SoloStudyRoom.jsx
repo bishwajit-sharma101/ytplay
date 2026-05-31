@@ -67,10 +67,15 @@ export default function SoloStudyRoom({ video, username, isDarkMode, backendUrl,
   };
 
   // Retrieve onboarding answers for personalization
+  // Retrieve onboarding answers and AI roadmap for personalization
+  const roadmapKey = `kaevrix_roadmap_progress_${username}`;
+  const savedRoadmapStr = localStorage.getItem(roadmapKey);
+  const savedRoadmap = savedRoadmapStr ? JSON.parse(savedRoadmapStr) : null;
+
   const answersKey = `kaevrix_roadmap_answers_${username}`;
   const savedAnswers = localStorage.getItem(answersKey);
   const answers = savedAnswers ? JSON.parse(savedAnswers) : [];
-  const topic = answers && answers[0] ? answers[0].answer : (video.category || "General learning");
+  const topic = savedRoadmap?.topic || (answers && answers[0] ? answers[0].answer : (video.category || "General learning"));
 
   // Track if unlocked alert has played
   const alertPlayedRef = useRef(false);

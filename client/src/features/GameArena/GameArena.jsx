@@ -28,6 +28,34 @@ export default function GameArena({
   const myUnlockedSkills = getUnlockedSkills(selectedClass || "doomscroller", level || 1);
   const [videoPlaybackRate, setVideoPlaybackRate] = useState(1);
   const isSpeedrunner = (selectedClass || "").toLowerCase() === "speedrunner";
+  const [activeMilestones, setActiveMilestones] = useState([]);
+
+  useEffect(() => {
+    if (!username) return;
+    const saved = localStorage.getItem(`kaevrix_roadmap_progress_${username}`);
+    if (saved) {
+      try {
+        const roadmap = JSON.parse(saved);
+        let milestones = [];
+        if (roadmap.level1?.milestones?.some(m => m.status !== "completed")) {
+          milestones = roadmap.level1.milestones;
+        } else if (roadmap.level2?.milestones?.some(m => m.status !== "completed")) {
+          milestones = roadmap.level2.milestones;
+        } else if (roadmap.level3?.milestones?.some(m => m.status !== "completed")) {
+          milestones = roadmap.level3.milestones;
+        } else {
+          milestones = roadmap.level3?.milestones || [];
+        }
+        
+        // Only show completed and currently unlocked milestones, hide future locked ones
+        milestones = milestones.filter(m => m.status !== "locked");
+        
+        setActiveMilestones(milestones);
+      } catch (e) {
+        console.error("Failed to parse roadmap logic in GameArena:", e);
+      }
+    }
+  }, [username]);
 
   // Pop Quiz States
   const [activeInVideoQuestion, setActiveInVideoQuestion] = useState(null);
@@ -492,6 +520,67 @@ export default function GameArena({
             <div className={`energy-bar-fill ${energy === 100 ? "full" : ""}`} style={{ width: `${energy}%` }}></div>
           </div>
         </div>
+
+        {/* Pathfinder To-Do Widget */}
+        {activeMilestones.length > 0 && (
+          <div className="glass-panel" style={{ padding: "15px", display: "flex", flexDirection: "column", gap: "10px" }}>
+            <h4 className="panel-title" style={{ borderLeftColor: "var(--neon-orange)", marginBottom: "5px" }}>Active Directives</h4>
+            <div className="custom-scrollbar" style={{ display: "flex", flexDirection: "column", gap: "8px", maxHeight: "180px", overflowY: "auto", paddingRight: "5px" }}>
+              {activeMilestones.map(m => {
+                const isMilestoneDone = m.status === "completed";
+                const subtopicIndex = m.subtopicIndex || 0;
+                
+                return (
+                  <div key={m.id} style={{ marginBottom: "12px" }}>
+                    <div style={{
+                      fontSize: "12px", fontWeight: "900", color: "var(--text-light)",
+                      marginBottom: "6px", borderBottom: "1px solid rgba(255, 106, 0, 0.2)",
+                      paddingBottom: "4px"
+                    }}>
+                      {m.title}
+                    </div>
+                    
+                    {m.keyPoints?.map((pt, i) => {
+                      const isDone = isMilestoneDone || i < subtopicIndex;
+                      
+                      return (
+                        <div key={i} style={{
+                          display: "flex", alignItems: "flex-start", gap: "10px",
+                          opacity: isDone ? 0.5 : 1,
+                          background: isDone ? "transparent" : "rgba(255, 106, 0, 0.05)",
+                          border: isDone ? "1px dashed transparent" : "1px solid rgba(255, 106, 0, 0.2)",
+                          padding: isDone ? "4px 8px" : "8px 10px",
+                          borderRadius: "6px",
+                          marginBottom: "4px",
+                          transition: "all 0.3s"
+                        }}>
+                          <div style={{
+                            marginTop: isDone ? "0px" : "2px",
+                            color: isDone ? "var(--neon-green)" : "var(--neon-orange)",
+                            fontSize: "12px"
+                          }}>
+                            {isDone ? "✅" : "🔲"}
+                          </div>
+                          <div style={{ flex: 1 }}>
+                            <div style={{ 
+                              fontSize: "12px", 
+                              fontWeight: isDone ? "500" : "700", 
+                              color: isDone ? "var(--text-muted)" : "var(--text-light)",
+                              textDecoration: isDone ? "line-through" : "none",
+                              lineHeight: "1.3"
+                            }}>
+                              {pt}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Live Chat Component */}
         <div className="glass-panel" style={{ flex: 1, minHeight: "280px", padding: "15px" }}>
