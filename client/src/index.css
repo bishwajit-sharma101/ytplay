@@ -2875,3 +2875,332 @@ body {
 .btn-surpass-limits:active {
   transform: translateY(0) scale(0.98);
 }
+
+/* ==========================================================================
+   PREMIUM HUD STYLING ADDITIONS (GAMING / ROADMAP INTERFACE)
+   ========================================================================== */
+
+/* Glassmorphic Tactical Panels */
+.hud-panel {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 106, 0, 0.12);
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 8px 32px 0 rgba(255, 106, 0, 0.03);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dark-theme .hud-panel {
+  background: rgba(30, 41, 59, 0.45);
+  border: 1px solid rgba(255, 106, 0, 0.15);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+}
+
+/* Console HUD Header Component */
+.hud-console-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  border-radius: 16px;
+  margin-bottom: 24px;
+  position: relative;
+  overflow: hidden;
+  border-left: 4px solid var(--neon-orange);
+}
+
+.hud-console-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, rgba(255, 106, 0, 0.04) 0%, transparent 100%);
+  pointer-events: none;
+}
+
+/* Active HUD Tag Badges */
+.hud-tag {
+  font-family: var(--font-gamer);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.3s;
+}
+
+.hud-tag-orange {
+  color: #ea580c;
+  background: rgba(234, 88, 12, 0.08);
+  border: 1px solid rgba(234, 88, 12, 0.2);
+}
+
+.dark-theme .hud-tag-orange {
+  color: #ff9d5c;
+  background: rgba(255, 106, 0, 0.15);
+  border-color: rgba(255, 106, 0, 0.3);
+  text-shadow: 0 0 8px rgba(255, 106, 0, 0.4);
+}
+
+.hud-tag-green {
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.dark-theme .hud-tag-green {
+  color: #34d399;
+  background: rgba(52, 211, 153, 0.15);
+  border-color: rgba(52, 211, 153, 0.3);
+  text-shadow: 0 0 8px rgba(52, 211, 153, 0.4);
+}
+
+.hud-tag-blue {
+  color: #2563eb;
+  background: rgba(37, 99, 235, 0.08);
+  border: 1px solid rgba(37, 99, 235, 0.2);
+}
+
+.dark-theme .hud-tag-blue {
+  color: #60a5fa;
+  background: rgba(96, 165, 250, 0.15);
+  border-color: rgba(96, 165, 250, 0.3);
+  text-shadow: 0 0 8px rgba(96, 165, 250, 0.4);
+}
+
+/* Pulsing Status dot */
+.hud-pulse-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: currentColor;
+  animation: dotPulse 1.5s infinite alternate;
+}
+
+@keyframes dotPulse {
+  0% { transform: scale(0.8); opacity: 0.5; }
+  100% { transform: scale(1.3); opacity: 1; }
+}
+
+/* Split Feed Header Bars (compact) */
+.hud-feed-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1.5px solid rgba(255, 106, 0, 0.15);
+  padding-bottom: 10px;
+  margin-bottom: 16px;
+  position: relative;
+}
+
+.hud-feed-header-line {
+  position: absolute;
+  bottom: -1.5px;
+  left: 0;
+  width: 60px;
+  height: 2px;
+  background: var(--accent-gradient);
+  box-shadow: 0 0 10px var(--neon-orange);
+}
+
+.hud-feed-title {
+  font-family: var(--font-outfit);
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--text-light);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* High-tech Cards (Skill Modulators) */
+.hud-card {
+  position: relative;
+  background: var(--bg-dark-surface);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.35s cubic-bezier(0.25, 0.8, 0.25, 1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+}
+
+.hud-card:hover {
+  transform: translateY(-5px);
+  border-color: var(--neon-orange);
+  box-shadow: 0 12px 28px rgba(255, 106, 0, 0.12);
+}
+
+.dark-theme .hud-card:hover {
+  box-shadow: 0 12px 28px rgba(255, 106, 0, 0.22);
+}
+
+/* Holographic sweep overlay on card hover */
+.hud-card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -150%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.08),
+    transparent
+  );
+  transform: skewX(-25deg);
+  transition: 0.75s;
+}
+
+.hud-card:hover::after {
+  left: 150%;
+}
+
+.hud-card-active {
+  border: 2px solid var(--neon-orange) !important;
+  background: rgba(255, 106, 0, 0.03) !important;
+  box-shadow: 0 8px 24px rgba(255, 106, 0, 0.15) !important;
+}
+
+.dark-theme .hud-card-active {
+  background: rgba(255, 106, 0, 0.08) !important;
+}
+
+/* Video Card Thumbnail Zoom */
+.hud-thumbnail-wrap {
+  position: relative;
+  width: 100%;
+  padding-top: 56.25%;
+  overflow: hidden;
+  background: #000;
+}
+
+.hud-thumbnail-img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s cubic-bezier(0.25, 0.8, 0.25, 1), opacity 0.3s;
+}
+
+.hud-card:hover .hud-thumbnail-img {
+  transform: scale(1.06);
+}
+
+/* Tech indicator bar overlay on thumbnail bottom */
+.hud-progress-bar-hud {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.hud-progress-bar-hud-fill {
+  height: 100%;
+  background: var(--accent-gradient);
+  box-shadow: 0 0 8px var(--neon-orange);
+}
+
+/* Navigation Console buttons */
+.hud-nav-btn {
+  padding: 10px 16px;
+  border-radius: 10px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-weight: 700;
+  font-size: 13.5px;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-left: 3px solid transparent;
+}
+
+.hud-nav-btn:hover {
+  background: rgba(255, 106, 0, 0.05);
+  color: var(--text-light);
+  transform: translateX(4px);
+  border-left-color: rgba(255, 106, 0, 0.3);
+}
+
+.dark-theme .hud-nav-btn:hover {
+  background: rgba(255, 106, 0, 0.08);
+}
+
+.hud-nav-btn-active {
+  background: linear-gradient(90deg, rgba(255, 106, 0, 0.08), transparent) !important;
+  color: #ea580c !important;
+  border-left: 3px solid var(--neon-orange) !important;
+  font-weight: 800 !important;
+  box-shadow: inset 1px 0 0 rgba(255, 106, 0, 0.1);
+}
+
+.dark-theme .hud-nav-btn-active {
+  color: #ff9d5c !important;
+  background: linear-gradient(90deg, rgba(255, 106, 0, 0.15), transparent) !important;
+}
+
+/* Diagnostics Scanner Widget (Stats) */
+.hud-stats-box {
+  background: rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(234, 88, 12, 0.18);
+  border-radius: 14px;
+  padding: 14px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: inset 0 0 10px rgba(234, 88, 12, 0.02);
+}
+
+.dark-theme .hud-stats-box {
+  background: rgba(15, 23, 42, 0.3);
+  border: 1px solid rgba(255, 106, 0, 0.2);
+}
+
+/* Quest Tracker List Item animations */
+.hud-quest-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  margin-bottom: 6px;
+  border: 1px solid transparent;
+  transition: all 0.25s ease;
+}
+
+.hud-quest-row-active {
+  background: #ffffff;
+  border-color: rgba(255, 106, 0, 0.2);
+  box-shadow: 0 2px 8px rgba(255, 106, 0, 0.04);
+}
+
+.dark-theme .hud-quest-row-active {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 106, 0, 0.15);
+}
+
+.hud-quest-row-completed {
+  opacity: 0.55;
+  background: transparent;
+  border-color: transparent;
+}
+

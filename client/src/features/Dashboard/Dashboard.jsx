@@ -255,21 +255,8 @@ export default function Dashboard({
   };
 
   const getVideoCardStyle = (video) => ({
-    background: selectedVideo?.id === video.id 
-      ? (isDarkMode ? "rgba(255, 106, 0, 0.08)" : "#fff7ed") 
-      : (isDarkMode ? "#1e293b" : "#ffffff"),
-    border: selectedVideo?.id === video.id 
-      ? "2px solid #ff6a00" 
-      : (isDarkMode ? "1px solid rgba(255,255,255,0.08)" : "1px solid #e2e8f0"),
-    borderRadius: "18px",
-    overflow: "hidden",
-    cursor: "pointer",
-    transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-    boxShadow: selectedVideo?.id === video.id 
-      ? "0 10px 30px rgba(255,106,0,0.2)" 
-      : "0 2px 8px rgba(0,0,0,0.06)",
-    transform: selectedVideo?.id === video.id ? "translateY(-4px)" : "none",
-    display: "flex", flexDirection: "column",
+    display: "flex", 
+    flexDirection: "column",
   });
 
   const renderVideoCardContent = (video, defaultCategory) => {
@@ -278,45 +265,54 @@ export default function Dashboard({
     return (
       <>
         {/* 16:9 Thumbnail */}
-        <div style={{ position: "relative", width: "100%", paddingTop: "56.25%", background: "#000", overflow: "hidden" }}>
+        <div className="hud-thumbnail-wrap">
           <img
             src={video.thumbnail}
             alt={video.title}
-            style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", objectFit: "cover", opacity: 0.92 }}
+            className="hud-thumbnail-img"
+            style={{ opacity: 0.92 }}
           />
           {/* Gradient overlay */}
           <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 55%)" }} />
 
           {/* LIVE badge */}
-          <div style={{ position: "absolute", top: "10px", left: "10px", background: "#ef4444", color: "#fff", padding: "3px 8px", borderRadius: "6px", fontSize: "10px", fontWeight: "900", display: "flex", alignItems: "center", gap: "5px" }}>
-            <span style={{ width: "5px", height: "5px", borderRadius: "50%", background: "#fff", animation: "pulse 1.5s infinite" }} />
+          <div style={{ position: "absolute", top: "10px", left: "10px", background: "#ef4444", color: "#fff", padding: "3px 8px", borderRadius: "6px", fontSize: "10px", fontWeight: "900", display: "flex", alignItems: "center", gap: "5px", fontFamily: "var(--font-gamer)", letterSpacing: "0.5px" }}>
+            <span style={{ width: "5.5px", height: "5.5px", borderRadius: "50%", background: "#fff", animation: "pulse 1.5s infinite" }} />
             LIVE
           </div>
 
           {/* Queue count */}
-          <div style={{ position: "absolute", top: "10px", right: "10px", background: "rgba(0,0,0,0.55)", backdropFilter: "blur(6px)", color: "#fff", padding: "3px 8px", borderRadius: "6px", fontSize: "10px", fontWeight: "800", border: "1px solid rgba(255,255,255,0.12)" }}>
-            👁️ {Math.floor((video.id || "0").charCodeAt(0) * 3.7) + 120} queuing
+          <div style={{ position: "absolute", top: "10px", right: "10px", background: "rgba(0,0,0,0.65)", backdropFilter: "blur(6px)", color: "#fff", padding: "3px 8px", borderRadius: "6px", fontSize: "10px", fontWeight: "800", border: "1px solid rgba(255,255,255,0.12)", display: "flex", alignItems: "center", gap: "4px" }}>
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.85 }}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
+            {Math.floor((video.id || "0").charCodeAt(0) * 3.7) + 120} QUEUING
           </div>
 
           {/* Duration */}
-          <span style={{ position: "absolute", bottom: "10px", right: "10px", background: "rgba(0,0,0,0.7)", color: "#fff", padding: "3px 7px", borderRadius: "5px", fontSize: "11px", fontWeight: "700" }}>
+          <span style={{ position: "absolute", bottom: "10px", right: "10px", background: "rgba(0,0,0,0.75)", color: "#fff", padding: "3px 7px", borderRadius: "5px", fontSize: "11px", fontWeight: "700", display: "flex", alignItems: "center", gap: "4px" }}>
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.85 }}><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
             {Math.floor((video.duration || 300) / 60)}:{String((video.duration || 300) % 60).padStart(2, '0')}
           </span>
+          
+          {/* HUD Tech learning progress bar */}
+          <div className="hud-progress-bar-hud">
+            <div className="hud-progress-bar-hud-fill" style={{ width: selectedVideo?.id === video.id ? "100%" : "30%" }}></div>
+          </div>
         </div>
 
         {/* Card Info */}
-        <div style={{ padding: "18px", flex: 1, display: "flex", flexDirection: "column" }}>
+        <div style={{ padding: "16px", flex: 1, display: "flex", flexDirection: "column" }}>
           {/* Tags */}
-          <div style={{ display: "flex", gap: "6px", marginBottom: "10px", flexWrap: "wrap" }}>
-            <span style={{ fontSize: "10px", fontWeight: "800", color: catStyle.color, background: catStyle.bg, padding: "3px 8px", borderRadius: "5px", textTransform: "uppercase" }}>{category}</span>
-            <span style={{ fontSize: "10px", fontWeight: "800", color: "#4338ca", background: "#e0e7ff", padding: "3px 8px", borderRadius: "5px", textTransform: "uppercase" }}>TRENDING</span>
+          <div style={{ display: "flex", gap: "6px", marginBottom: "8px", flexWrap: "wrap" }}>
+            <span style={{ fontSize: "9px", fontWeight: "800", color: catStyle.color, background: catStyle.bg, padding: "2px 6px", borderRadius: "4px", textTransform: "uppercase", border: `1px solid ${catStyle.color}25` }}>{category}</span>
+            <span style={{ fontSize: "9px", fontWeight: "800", color: "#4338ca", background: "#e0e7ff", padding: "2px 6px", borderRadius: "4px", textTransform: "uppercase", border: "1px solid rgba(67, 56, 202, 0.15)" }}>TRENDING</span>
           </div>
 
-          <h4 style={{ fontSize: "15px", fontWeight: "800", color: "var(--text-light)", marginBottom: "6px", display: "-webkit-box", WebkitLineClamp: "2", WebkitBoxOrient: "vertical", overflow: "hidden", lineHeight: "1.4" }}>
+          <h4 style={{ fontSize: "14.5px", fontWeight: "800", color: "var(--text-light)", marginBottom: "6px", display: "-webkit-box", WebkitLineClamp: "2", WebkitBoxOrient: "vertical", overflow: "hidden", lineHeight: "1.35", fontFamily: "var(--font-outfit)" }}>
             {video.title}
           </h4>
-          <p style={{ fontSize: "13px", color: "var(--text-muted)", marginBottom: "14px", display: "flex", alignItems: "center", gap: "5px", fontWeight: "600" }}>
-            📺 {video.channel}
+          <p style={{ fontSize: "12px", color: "var(--text-muted)", marginTop: "auto", display: "flex", alignItems: "center", gap: "4px", fontWeight: "600", textTransform: "uppercase", fontFamily: "monospace", letterSpacing: "0.2px" }}>
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.7 }}><rect x="2" y="2" width="20" height="8" rx="2" ry="2" /><rect x="2" y="14" width="20" height="8" rx="2" ry="2" /><line x1="6" y1="6" x2="6.01" y2="6" /><line x1="6" y1="18" x2="6.01" y2="18" /></svg>
+            {video.channel}
           </p>
         </div>
       </>
@@ -337,51 +333,49 @@ export default function Dashboard({
       {/* Sidebar Navigation */}
       <div style={{ width: "220px", display: "flex", flexDirection: "column", gap: "6px", flexShrink: 0, position: "sticky", top: "20px" }}>
         <div style={{ marginBottom: "8px", padding: "0 12px" }}>
-          <span style={{ fontSize: "11px", fontWeight: "700", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "1.5px" }}>Navigation</span>
+          <span style={{ fontSize: "10px", fontWeight: "800", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "2px", fontFamily: "var(--font-gamer)" }}>NAVIGATION SYSTEM</span>
         </div>
         {navItems.map(item => (
           <button
             key={item.id}
             onClick={() => handleTabChange(item.id)}
-            style={{
-              padding: "12px 16px",
-              borderRadius: "12px",
-              border: "none",
-              background: activeTab === item.id ? "linear-gradient(135deg, #fff7ed, #ffedd5)" : "transparent",
-              color: activeTab === item.id ? "#ea580c" : "var(--text-muted)",
-              fontWeight: "700",
-              fontSize: "14px",
-              textAlign: "left",
-              cursor: "pointer",
-              transition: "all 0.2s",
-              display: "flex",
-              alignItems: "center",
-              gap: "10px",
-              boxShadow: activeTab === item.id ? "0 2px 12px rgba(255,106,0,0.15)" : "none",
-              borderLeft: activeTab === item.id ? "3px solid #ff6a00" : "3px solid transparent",
-            }}
+            className={`hud-nav-btn ${activeTab === item.id ? "hud-nav-btn-active" : ""}`}
+            style={{ width: "100%" }}
           >
-            <span style={{ fontSize: "16px" }}>{item.icon}</span>
-            {item.label}
+            <span style={{ fontSize: "15px" }}>{item.icon}</span>
+            <span style={{ fontFamily: "var(--font-outfit)" }}>{item.label}</span>
           </button>
         ))}
 
         {/* Quick Stats Widget */}
-        <div style={{ marginTop: "24px", background: "linear-gradient(135deg, #fff7ed, #ffedd5)", borderRadius: "16px", padding: "16px", border: "1px solid #fed7aa" }}>
-          <div style={{ fontSize: "11px", fontWeight: "800", color: "#ea580c", textTransform: "uppercase", letterSpacing: "1px", marginBottom: "12px" }}>⚡ Live Activity</div>
+        <div className="hud-stats-box" style={{ marginTop: "24px" }}>
+          <div style={{ fontSize: "10px", fontWeight: "800", color: "#ea580c", textTransform: "uppercase", letterSpacing: "1.5px", marginBottom: "12px", fontFamily: "var(--font-gamer)", display: "flex", alignItems: "center", gap: "5px" }}>
+            <span className="hud-pulse-dot" style={{ color: "#ea580c" }} />
+            LIVE ACTIVITY
+          </div>
           <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px" }}>
-              <span style={{ color: "var(--text-muted)" }}>Battles now</span>
-              <span style={{ fontWeight: "800", color: "#ea580c" }}>1,247</span>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12.5px" }}>
+              <span style={{ color: "var(--text-muted)", fontWeight: "500" }}>Battles now</span>
+              <span style={{ fontWeight: "800", color: "#ea580c", fontFamily: "monospace" }}>1,247</span>
             </div>
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px" }}>
-              <span style={{ color: "var(--text-muted)" }}>Players online</span>
-              <span style={{ fontWeight: "800", color: "#10b981" }}>3,821</span>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12.5px" }}>
+              <span style={{ color: "var(--text-muted)", fontWeight: "500" }}>Players online</span>
+              <span style={{ fontWeight: "800", color: "#10b981", fontFamily: "monospace" }}>3,821</span>
             </div>
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px" }}>
-              <span style={{ color: "var(--text-muted)" }}>Videos in queue</span>
-              <span style={{ fontWeight: "800", color: "#8b5cf6" }}>94</span>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12.5px" }}>
+              <span style={{ color: "var(--text-muted)", fontWeight: "500" }}>Videos in queue</span>
+              <span style={{ fontWeight: "800", color: "#8b5cf6", fontFamily: "monospace" }}>94</span>
             </div>
+          </div>
+          
+          {/* Waveform graphic inside the widget for gaming aesthetic */}
+          <div style={{ height: "20px", marginTop: "14px", opacity: 0.25, display: "flex", alignItems: "flex-end", gap: "2px" }}>
+            <div style={{ flex: 1, height: "40%", background: "#ea580c", borderRadius: "1px", animation: "pulse 1.2s infinite alternate" }} />
+            <div style={{ flex: 1, height: "70%", background: "#ea580c", borderRadius: "1px", animation: "pulse 0.8s infinite alternate-reverse" }} />
+            <div style={{ flex: 1, height: "25%", background: "#ea580c", borderRadius: "1px", animation: "pulse 1.5s infinite alternate" }} />
+            <div style={{ flex: 1, height: "90%", background: "#ea580c", borderRadius: "1px", animation: "pulse 0.6s infinite alternate-reverse" }} />
+            <div style={{ flex: 1, height: "50%", background: "#ea580c", borderRadius: "1px", animation: "pulse 1.1s infinite alternate" }} />
+            <div style={{ flex: 1, height: "75%", background: "#ea580c", borderRadius: "1px", animation: "pulse 0.9s infinite alternate-reverse" }} />
           </div>
         </div>
       </div>
@@ -394,78 +388,34 @@ export default function Dashboard({
 
         {activeTab === "duels" && (
           <div>
-            {/* Hero Section */}
+            {/* Premium Topic Header */}
+            {/* Premium Topic Header */}
             {!searchQuery && (
-              <div style={{
-                background: isDarkMode 
-                  ? "linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #1e0a00 100%)" 
-                  : "linear-gradient(135deg, #fffaf5 0%, #ffedd5 60%, #ffe3d1 100%)",
-                border: isDarkMode ? "none" : "1px solid rgba(255, 106, 0, 0.2)",
-                boxShadow: isDarkMode ? "none" : "0 10px 30px rgba(255, 106, 0, 0.06)",
-                borderRadius: "24px",
-                padding: "40px",
-                marginBottom: "32px",
-                position: "relative",
-                overflow: "hidden",
-              }}>
-                {/* Background decorations */}
-                <div style={{ position: "absolute", top: "-40px", right: "-40px", width: "200px", height: "200px", borderRadius: "50%", background: isDarkMode ? "radial-gradient(circle, rgba(255,106,0,0.2) 0%, transparent 70%)" : "radial-gradient(circle, rgba(255,106,0,0.22) 0%, transparent 70%)", pointerEvents: "none" }} />
-                <div style={{ position: "absolute", bottom: "-30px", left: "30%", width: "150px", height: "150px", borderRadius: "50%", background: isDarkMode ? "radial-gradient(circle, rgba(139,92,246,0.15) 0%, transparent 70%)" : "radial-gradient(circle, rgba(255,106,0,0.12) 0%, transparent 70%)", pointerEvents: "none" }} />
-
-                <div style={{ position: "relative", zIndex: 1 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "12px" }}>
-                    <span style={{ background: "rgba(255,106,0,0.2)", color: "#ff6a00", padding: "4px 12px", borderRadius: "20px", fontSize: "12px", fontWeight: "800", border: "1px solid rgba(255,106,0,0.3)" }}>⚔️ DUEL ARENA</span>
-                    <span style={{ background: "rgba(16,185,129,0.2)", color: "#10b981", padding: "4px 12px", borderRadius: "20px", fontSize: "12px", fontWeight: "800", border: "1px solid rgba(16,185,129,0.3)", animation: "pulse 2s infinite" }}>🔴 LIVE</span>
+              <div style={{ display: "flex", flexDirection: "column", gap: "4px", marginBottom: "24px" }}>
+                <div>
+                  <div style={{ fontSize: "9px", fontWeight: "800", color: "var(--text-muted)", letterSpacing: "2.5px", fontFamily: "var(--font-gamer)", textTransform: "uppercase", marginBottom: "2px" }}>
+                    {topic ? "ACTIVE PATHWAY" : "CLASS ONBOARDING"}
                   </div>
-                  <h1 style={{ fontSize: "36px", fontWeight: "900", color: isDarkMode ? "#ffffff" : "#1e293b", marginBottom: "8px", lineHeight: "1.2" }}>
-                    {topic ? (
-                      <>
-                        Master <span style={{ background: "linear-gradient(135deg, #ff6a00, #ffb300)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>{topic}</span> Training
-                      </>
-                    ) : (
-                      <>
-                        Choose Your <span style={{ background: "linear-gradient(135deg, #ff6a00, #ffb300)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Battle Ground</span>
-                      </>
-                    )}
+                  <h1 style={{ 
+                    fontSize: "26px", 
+                    fontWeight: "900", 
+                    margin: 0, 
+                    color: "var(--text-light)",
+                    lineHeight: "1.2",
+                    fontFamily: "var(--font-outfit)",
+                    letterSpacing: "-0.5px"
+                  }}>
+                    {topic || "TRAINING ARENA"}
                   </h1>
-                  <p style={{ fontSize: "16px", color: "var(--text-muted)", lineHeight: "1.6", maxWidth: "600px", marginBottom: "32px" }}>
-                    {savedRoadmap?.summary ? savedRoadmap.summary : why ? `A structured training ground tailored to your goal of "${why}". Face off in duels or enter the solo study theatre.` : "Engage in competitive 1v1 duels or train solo in the dedicated theatre to master new technologies."}
-                  </p>
-
-                  {/* Trending Topics / Roadmap Milestones Pills */}
-                  <div style={{ marginTop: "24px", display: "flex", flexWrap: "wrap", gap: "10px" }}>
-                    {getBannerPills().map(t => (
-                      <button
-                        key={t.label}
-                        onClick={() => onSearch && onSearch(t.query || t.label)}
-                        style={{
-                          display: "flex", alignItems: "center", gap: "6px",
-                          padding: "8px 16px", borderRadius: "20px",
-                          border: isDarkMode ? "1px solid rgba(255,255,255,0.12)" : "1px solid rgba(255, 106, 0, 0.22)",
-                          background: isDarkMode ? "rgba(255,255,255,0.07)" : "rgba(255, 255, 255, 0.75)",
-                          color: isDarkMode ? "#fff" : "#1e293b", fontSize: "13px", fontWeight: "700",
-                          cursor: "pointer", transition: "all 0.2s",
-                          backdropFilter: "blur(8px)",
-                        }}
-                        onMouseOver={e => { 
-                          e.currentTarget.style.background = `${t.color || "#ff6a00"}22`; 
-                          e.currentTarget.style.borderColor = t.color || "#ff6a00"; 
-                        }}
-                        onMouseOut={e => { 
-                          e.currentTarget.style.background = isDarkMode ? "rgba(255,255,255,0.07)" : "rgba(255, 255, 255, 0.75)"; 
-                          e.currentTarget.style.borderColor = isDarkMode ? "rgba(255,255,255,0.12)" : "rgba(255, 106, 0, 0.22)"; 
-                        }}
-                      >
-                        {t.icon} {t.label}
-                        {!topic && t.players && (
-                          <span style={{ fontSize: "11px", color: isDarkMode ? "rgba(255,255,255,0.7)" : "#64748b", fontWeight: "normal" }}>
-                            {t.players.toLocaleString()} playing
-                          </span>
-                        )}
-                      </button>
-                    ))}
-                  </div>
                 </div>
+                {topic && activeSubtopicObj && (
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "4px" }}>
+                    <span className="hud-tag hud-tag-green" style={{ fontSize: "10px", fontWeight: "800", padding: "4px 10px", borderRadius: "6px" }}>
+                      <span className="hud-pulse-dot" />
+                      TARGET DIRECTIVE // {activeSubtopicObj.subtopic}
+                    </span>
+                  </div>
+                )}
               </div>
             )}
 
@@ -519,22 +469,22 @@ export default function Dashboard({
               </div>
             )}
 
-            {/* Video Selection Header */}
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "20px" }}>
-              <div>
-                <h2 style={{ fontSize: "22px", fontWeight: "800", color: "var(--text-light)", marginBottom: "4px" }}>
-                  {searchQuery ? `Results for "${searchQuery}"` : (topic ? `✨ Curated Learning Arena` : "🎯 Featured Training Videos")}
-                </h2>
-                <p style={{ color: "var(--text-muted)", fontSize: "14px" }}>
-                  {isSearching || loadingFeed || loadingToday ? "Scanning the learning grid..." : (searchQuery ? `${searchResults?.length || 0} videos found` : (topic ? `Your specialized recommendation feeds aligned to your learning roadmap objectives.` : "Hand-picked educational content — AI quizzes generated from each video"))}
-                </p>
-              </div>
-              {searchQuery && (
+            {/* Search Results Header */}
+            {searchQuery && (
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "20px" }}>
+                <div>
+                  <h2 style={{ fontSize: "22px", fontWeight: "800", color: "var(--text-light)", marginBottom: "4px" }}>
+                    Results for "{searchQuery}"
+                  </h2>
+                  <p style={{ color: "var(--text-muted)", fontSize: "14px", margin: 0 }}>
+                    {isSearching ? "Scanning the learning grid..." : `${searchResults?.length || 0} videos found`}
+                  </p>
+                </div>
                 <button onClick={() => onSearch && onSearch("")} style={{ padding: "8px 16px", borderRadius: "10px", border: "1px solid #e2e8f0", background: "#fff", color: "var(--text-muted)", fontSize: "13px", fontWeight: "700", cursor: "pointer" }}>
                   ✕ Clear Search
                 </button>
-              )}
-            </div>
+              </div>
+            )}
 
             {/* Videos Grid — standard 16:9 cards OR game loading animation */}
             {isSearching || loadingFeed || loadingToday ? (
@@ -684,11 +634,12 @@ export default function Dashboard({
               </div>
             ) : searchQuery ? (
               // Search results mode
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "24px" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "20px" }}>
                 {(searchResults || []).map((video) => (
                   <div
                     key={video.id}
                     onClick={() => handleSelectVideo(video)}
+                    className={`hud-card ${selectedVideo?.id === video.id ? "hud-card-active" : ""}`}
                     style={getVideoCardStyle(video)}
                   >
                     {renderVideoCardContent(video)}
@@ -697,31 +648,23 @@ export default function Dashboard({
               </div>
             ) : topic ? (
               // Split Feeds: Recommended for Today & Explore
-              <div style={{ display: "flex", flexDirection: "column", gap: "44px" }}>
-                {/* 1. Recommended for Today */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "36px" }}>
+                {/* 1. Active Mission (Recommended) */}
                 <div>
-                  <div style={{ marginBottom: "18px", borderBottom: isDarkMode ? "1px solid rgba(255,255,255,0.06)" : "1px solid #f1f5f9", paddingBottom: "10px" }}>
-                    <h3 style={{ fontSize: "18px", fontWeight: "900", color: "var(--text-light)", display: "flex", alignItems: "center", gap: "10px" }}>
-                      📅 Recommended for Today
-                      <span style={{ fontSize: "10px", fontWeight: "800", color: "#10b981", background: "rgba(16,185,129,0.12)", padding: "4px 10px", borderRadius: "6px", textTransform: "uppercase", letterSpacing: "0.5px" }}>TODAY'S OBJECTIVE</span>
+                  <div className="hud-feed-header">
+                    <div className="hud-feed-header-line" />
+                    <h3 className="hud-feed-title" style={{ fontSize: "14px", fontWeight: "800", color: "var(--text-muted)", letterSpacing: "0.5px" }}>
+                      RECOMMENDED FOR TODAY
                     </h3>
-                    <p style={{ color: "var(--text-muted)", fontSize: "13.5px", marginTop: "4px", lineHeight: "1.4" }}>
-                      {activeSubtopicObj ? (
-                        <>
-                          Targeting: <strong style={{ color: "var(--neon-orange)" }}>{activeSubtopicObj.subtopic}</strong> (from milestone <em>{activeSubtopicObj.milestoneTitle}</em>)
-                        </>
-                      ) : (
-                        "No active objectives. Set a milestone in Pathfinder to get today's recommendations!"
-                      )}
-                    </p>
                   </div>
                   
                   {todayVideos.length > 0 ? (
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "24px" }}>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "20px" }}>
                       {todayVideos.map((video) => (
                         <div
                           key={video.id}
                           onClick={() => handleSelectVideo(video)}
+                          className={`hud-card ${selectedVideo?.id === video.id ? "hud-card-active" : ""}`}
                           style={getVideoCardStyle(video)}
                         >
                           {renderVideoCardContent(video, "Core Tutorial")}
@@ -729,30 +672,28 @@ export default function Dashboard({
                       ))}
                     </div>
                   ) : (
-                    <div style={{ padding: "32px", textAlign: "center", background: isDarkMode ? "rgba(255,255,255,0.02)" : "#f8fafc", borderRadius: "16px", border: "1px dashed var(--glass-border)", color: "var(--text-muted)", fontSize: "14px" }}>
+                    <div style={{ padding: "24px", textAlign: "center", background: isDarkMode ? "rgba(255,255,255,0.01)" : "#f8fafc", borderRadius: "12px", border: "1px dashed var(--glass-border)", color: "var(--text-muted)", fontSize: "13px" }}>
                       {activeSubtopicObj ? "Finding best tutorials for today's objective..." : "Initialize Pathfinder to get custom daily objectives."}
                     </div>
                   )}
                 </div>
 
-                {/* 2. Explore Feed */}
+                {/* 2. Radar (Explore) */}
                 <div>
-                  <div style={{ marginBottom: "18px", borderBottom: isDarkMode ? "1px solid rgba(255,255,255,0.06)" : "1px solid #f1f5f9", paddingBottom: "10px" }}>
-                    <h3 style={{ fontSize: "18px", fontWeight: "900", color: "var(--text-light)", display: "flex", alignItems: "center", gap: "10px" }}>
-                      🧭 Explore Learning Path
-                      <span style={{ fontSize: "10px", fontWeight: "800", color: "#3b82f6", background: "rgba(59, 130, 246, 0.12)", padding: "4px 10px", borderRadius: "6px", textTransform: "uppercase", letterSpacing: "0.5px" }}>BROADER GOALS</span>
+                  <div className="hud-feed-header" style={{ marginTop: "24px" }}>
+                    <div className="hud-feed-header-line" style={{ background: "linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%)", boxShadow: "0 0 10px #3b82f6" }} />
+                    <h3 className="hud-feed-title" style={{ fontSize: "14px", fontWeight: "800", color: "var(--text-muted)", letterSpacing: "0.5px" }}>
+                      RADAR SCAN (EXPANDED RECON)
                     </h3>
-                    <p style={{ color: "var(--text-muted)", fontSize: "13.5px", marginTop: "4px" }}>
-                      Broader training videos based on your goal of: <strong style={{ color: "#3b82f6" }}>{why || topic}</strong>
-                    </p>
                   </div>
 
                   {personalizedFeed.length > 0 ? (
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "24px" }}>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "20px" }}>
                       {personalizedFeed.map((video) => (
                         <div
                           key={video.id}
                           onClick={() => handleSelectVideo(video)}
+                          className={`hud-card ${selectedVideo?.id === video.id ? "hud-card-active" : ""}`}
                           style={getVideoCardStyle(video)}
                         >
                           {renderVideoCardContent(video)}
@@ -760,7 +701,7 @@ export default function Dashboard({
                       ))}
                     </div>
                   ) : (
-                    <div style={{ padding: "32px", textAlign: "center", background: isDarkMode ? "rgba(255,255,255,0.02)" : "#f8fafc", borderRadius: "16px", border: "1px dashed var(--glass-border)", color: "var(--text-muted)", fontSize: "14px" }}>
+                    <div style={{ padding: "24px", textAlign: "center", background: isDarkMode ? "rgba(255,255,255,0.01)" : "#f8fafc", borderRadius: "12px", border: "1px dashed var(--glass-border)", color: "var(--text-muted)", fontSize: "13px" }}>
                       No recommendations found. Try adjusting your Pathfinder goals.
                     </div>
                   )}
@@ -768,11 +709,12 @@ export default function Dashboard({
               </div>
             ) : (
               // Curated Fallbacks
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "24px" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "20px" }}>
                 {(curatedVideos || []).map((video) => (
                   <div
                     key={video.id}
                     onClick={() => handleSelectVideo(video)}
+                    className={`hud-card ${selectedVideo?.id === video.id ? "hud-card-active" : ""}`}
                     style={getVideoCardStyle(video)}
                   >
                     {renderVideoCardContent(video)}
@@ -881,10 +823,10 @@ export default function Dashboard({
       {/* Right Sidebar: Pathfinder To-Do List */}
       {activeTab === "duels" && (
         <div style={{ width: "280px", display: "flex", flexDirection: "column", gap: "16px", flexShrink: 0, position: "sticky", top: "20px" }}>
-          <div style={{ background: isDarkMode ? "linear-gradient(135deg, #1e1b4b, #0f172a)" : "linear-gradient(135deg, #fffaf5, #ffedd5)", borderRadius: "16px", padding: "20px", border: isDarkMode ? "1px solid rgba(255,106,0,0.2)" : "1px solid #fed7aa", boxShadow: "0 4px 15px rgba(255,106,0,0.05)" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "16px" }}>
-              <span style={{ fontSize: "18px" }}>🧠</span>
-              <span style={{ fontSize: "12px", fontWeight: "800", color: "#ea580c", textTransform: "uppercase", letterSpacing: "1px" }}>Active Directives</span>
+          <div className="hud-panel" style={{ padding: "20px", display: "flex", flexDirection: "column" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "16px", borderBottom: "1.5px solid rgba(255, 106, 0, 0.15)", paddingBottom: "10px" }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ea580c" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+              <span style={{ fontSize: "11px", fontWeight: "800", color: "#ea580c", textTransform: "uppercase", letterSpacing: "1.5px", fontFamily: "var(--font-gamer)" }}>QUEST TRACKER</span>
             </div>
             
             <div style={{ display: "flex", flexDirection: "column", gap: "10px", maxHeight: "60vh", overflowY: "auto", paddingRight: "4px" }} className="custom-scrollbar">
@@ -896,9 +838,9 @@ export default function Dashboard({
                   return (
                     <div key={m.id} style={{ marginBottom: "12px" }}>
                       <div style={{
-                        fontSize: "13px", fontWeight: "900", color: isDarkMode ? "#e2e8f0" : "#1e293b",
-                        marginBottom: "8px", borderBottom: isDarkMode ? "1px solid rgba(255,255,255,0.1)" : "1px solid #fed7aa",
-                        paddingBottom: "4px"
+                        fontSize: "11.5px", fontWeight: "900", color: "var(--text-light)",
+                        marginBottom: "8px", borderBottom: "1px solid var(--glass-border)",
+                        paddingBottom: "4px", fontFamily: "var(--font-gamer)", letterSpacing: "0.5px", textTransform: "uppercase"
                       }}>
                         {m.title}
                       </div>
@@ -907,32 +849,28 @@ export default function Dashboard({
                         const isDone = isMilestoneDone || i < subtopicIndex;
                         
                         return (
-                          <div key={i} style={{
-                            display: "flex", alignItems: "flex-start", gap: "10px",
-                            opacity: isDone ? 0.5 : 1,
-                            background: isDone ? "transparent" : (isDarkMode ? "rgba(255,255,255,0.05)" : "#fff"),
-                            border: isDone ? "1px dashed transparent" : (isDarkMode ? "1px solid rgba(255,255,255,0.1)" : "1px solid #fed7aa"),
-                            padding: isDone ? "4px 8px" : "10px",
-                            borderRadius: "8px",
-                            marginBottom: "6px",
-                            transition: "all 0.3s",
-                            boxShadow: isDone || isDarkMode ? "none" : "0 2px 5px rgba(0,0,0,0.03)"
-                          }}>
+                          <div key={i} className={`hud-quest-row ${isDone ? "hud-quest-row-completed" : "hud-quest-row-active"}`}>
                             <div style={{
-                              marginTop: isDone ? "0px" : "2px",
+                              marginTop: "2px",
                               color: isDone ? "#10b981" : "#ea580c",
-                              fontSize: "12px",
-                              flexShrink: 0
+                              flexShrink: 0,
+                              display: "flex",
+                              alignItems: "center"
                             }}>
-                              {isDone ? "✅" : "🔲"}
+                              {isDone ? (
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                              ) : (
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="16" /><line x1="8" y1="12" x2="16" y2="12" /></svg>
+                              )}
                             </div>
                             <div style={{ flex: 1 }}>
                               <div style={{ 
-                                fontSize: "12px", 
+                                fontSize: "11.5px", 
                                 fontWeight: isDone ? "500" : "700", 
-                                color: isDone ? "var(--text-muted)" : (isDarkMode ? "#e2e8f0" : "#1e293b"),
+                                color: isDone ? "var(--text-muted)" : "var(--text-light)",
                                 textDecoration: isDone ? "line-through" : "none",
-                                lineHeight: "1.4"
+                                lineHeight: "1.4",
+                                fontFamily: "var(--font-outfit)"
                               }}>
                                 {pt}
                               </div>
@@ -944,7 +882,7 @@ export default function Dashboard({
                   );
                 })
               ) : (
-                <div style={{ fontSize: "13px", color: "var(--text-muted)", fontStyle: "italic", textAlign: "center", padding: "20px 0" }}>
+                <div style={{ fontSize: "11.5px", color: "var(--text-muted)", fontStyle: "italic", textAlign: "center", padding: "20px 0" }}>
                   No active directives. Go to the Pathfinder tab to generate a roadmap!
                 </div>
               )}
